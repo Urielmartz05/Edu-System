@@ -1,0 +1,136 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Poppins', Arial, Helvetica, sans-serif;
+}
+
+body {
+    background-color: #f1f5f9;
+}
+
+.registro-main {
+    width: 100%;
+    min-height: 90vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 30px 20px;
+    background-image: linear-gradient(rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0.55)), url("https://www.adventuresincre.com/university/wp-content/uploads/2024/01/campus-masterplan.webp");
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+.registro-main-container {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    max-width: 920px;
+    min-height: 580px;
+    background-color: #ffffff;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+}
+
+.registro-columna-derecha {
+    width: 50%;
+    background-color: white;
+    border-left: 1px solid #f1f5f9;
+    background-image: url("https://coursera-university-assets.s3.amazonaws.com/33/d3c2ebd8e24a18bf14a5754b613945/BSU-logo-vert-RGB-1-1-.png");
+    background-size: 78%;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+.registro-columna-izquierda {
+    width: 50%;
+    padding: 40px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.registro-title {
+    margin-bottom: 24px;
+    font-size: 26px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.registro-form {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+.registro-form label {
+    text-align: left;
+    font-size: 14px;
+    font-weight: 600;
+    color: #334155;
+    margin-bottom: 6px;
+}
+
+.registro-form input {
+    width: 100%;
+    padding: 11px 13px;
+    font-size: 14px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    margin-bottom: 14px;
+    background-color: #f8fafc;
+    color: #0f172a;
+    outline: none;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.registro-form input:focus {
+    border-color: #8B1528;
+    box-shadow: 0 0 0 3px rgba(139, 21, 40, 0.15);
+    background-color: #ffffff;
+}
+
+.registro-button {
+    width: 100%;
+    padding: 13px;
+    cursor: pointer;
+    margin-top: 6px;
+    border: none;
+    border-radius: 8px;
+    background-color: #8B1528;
+    color: white;
+    font-weight: bold;
+    font-size: 15px;
+    transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+.registro-button:hover {
+    background-color: #6E1020;
+}
+
+.registro-button:active {
+    transform: scale(0.99);
+}
+
+.registro-message {
+    margin-top: 14px;
+    font-size: 14px;
+    color: #475569;
+}
+
+.registro-link {
+    margin-top: 10px;
+    text-decoration: none;
+    color: #8B1528;
+    font-weight: 600;
+    font-size: 14px;
+    transition: color 0.2s ease;
+}
+
+.registro-link:hover {
+    text-decoration: underline;
+}
+

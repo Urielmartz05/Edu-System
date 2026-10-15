@@ -1,0 +1,19 @@
+<?php
+
+    function createConnection(){
+
+        $host = "localhost";
+        $user = 'root';
+        $password = 'Martzcal05@';
+        $baseDatos = "edu_system";
+
+        $connection = new mysqli($host, $user, $password, $baseDatos);
+
+        if($connection->connect_error){
+            die("Error de conexion: " . $connection->connect_error);
+        }
+
+        return $connection;
+    }
+
+?>
