@@ -1,5 +1,5 @@
 <?php
-    require_once("../auth/check_auth.php");
+    require_once("../../controllers/auth/check_auth.php");
     $user = getLoggedUser();
 ?>
 <!DOCTYPE html>
@@ -8,10 +8,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panel de Director</title>
-    <link rel="stylesheet" href="../ui/dashboard.css">
+    <link rel="stylesheet" href="/ui/dashboard.css">
 </head>
 <body>
-    <?php include_once("../ui/header/header.php"); ?>
+    <?php include_once("../../../ui/header/header.php"); ?>
 
     <main class="dashboard-main">
         <div class="user-card">

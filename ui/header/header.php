@@ -2,6 +2,12 @@
     if (session_status() === PHP_SESSION_NONE) {
         session_start();
     }
+
+    $roleType = '';
+    if (isset($_SESSION['user_id']) && !empty($_SESSION['role_id'])) {
+        include_once __DIR__ . "/../../src/controllers/role/getRoleType.php";
+        $roleType = getRoleType($_SESSION['role_id']);
+    }
 ?>
 
 
@@ -18,8 +24,8 @@
         <?php 
             if (isset($_SESSION['user_id'])) {
                 echo "<div class='user-session'>
-                        <p class='user'>Welcome, " . htmlspecialchars($_SESSION['name']) . "!</p>
-                        <a href='/logout/logout.php' class='logout-link'>Log out</a>
+                        <p class='user'>" . htmlspecialchars($roleType ?: $_SESSION['name']) . "!</p>
+                        <a href='/src/controllers/logout/logout.php' class='logout-link'>Log out</a>
                       </div>";
             }
 
@@ -29,7 +35,7 @@
                             <a href="/index.php">Log in</a>
                         </li>
                         <li>
-                            <a href="/signup/signup.php">Sign up</a>
+                            <a href="/src/views/signup/signup.php">Sign up</a>
                         </li>
                     </ul>'; 
             }

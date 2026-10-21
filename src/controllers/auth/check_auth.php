@@ -4,7 +4,7 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 if (!isset($_SESSION['user_id'])) {
-    header("Location: ../index.php");
+    header("Location: ../../../index.php");
     exit;
 }
 
@@ -36,7 +36,7 @@ function getLoggedUser() {
     // Si falta el apellido u otros datos en la sesión, consultamos a la base de datos
     if (empty($user['lastname']) && !empty($user['id'])) {
         try {
-            include_once __DIR__ . '/../connection.php';
+            include_once __DIR__ . '/../../config/connection.php';
             $conn = createConnection();
             $stmt = $conn->prepare("SELECT id, name, lastname, email, role FROM users WHERE id = ?");
             if ($stmt) {

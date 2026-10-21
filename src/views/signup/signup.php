@@ -1,5 +1,5 @@
 <?php
-    include_once "../connection.php";
+    include_once "../../config/connection.php";
     $conexion = createConnection();
 
     $mensaje = "";
@@ -51,7 +51,7 @@
 </head>
 <body>
 
-    <?php include_once('../ui/header/header.php') ?>
+    <?php include_once('../../../ui/header/header.php') ?>
     
     <main class="registro-main">
         <div class="registro-main-container">
@@ -91,13 +91,13 @@
                 <?php if (!empty($tokenConfirmacion)): ?>
                     <p class="registro-message">
                         Para confirmar tu correo:
-                        <a class="registro-link" href="../verificar/verificar.php?token=<?php echo urlencode($tokenConfirmacion); ?>">
+                        <a class="registro-link" href="../../controllers/verificar/verificar.php?token=<?php echo urlencode($tokenConfirmacion); ?>">
                             Confirmar email
                         </a>
                     </p>
                 <?php endif; ?>
 
-                <a class="registro-link" href="../index.php">Iniciar sesión</a>
+                <a class="registro-link" href="../../../index.php">Iniciar sesión</a>
             </div>
 
             <div class="registro-columna-derecha"></div>

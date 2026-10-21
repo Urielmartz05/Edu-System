@@ -1,6 +1,6 @@
 <?php
 
-    include_once('../connection.php');
+    include_once('../../config/connection.php');
     $connection = createConnection();
     session_start();
     $mensaje = '';
@@ -33,7 +33,7 @@
             if ($usuario && $autenticado) {
                 if (isset($usuario['email_verificado']) && (int)$usuario['email_verificado'] === 0) {
                     $_SESSION['error_login'] = "Debes confirmar tu correo antes de iniciar sesión.";
-                    header("Location: ../index.php");
+                    header("Location: ../../../index.php");
                     exit;
                 }
 
@@ -47,27 +47,27 @@
 
                     // Admin
                     case 1:
-                        header("Location: ../admin/adminDashboard.php");
+                        header("Location: ../../views/admin/adminDashboard.php");
                         break;
 
                     // alumno
                     case 2:
-                        header("Location: ../alumno/alumno.php");
+                        header("Location: ../../views/alumno/alumno.php");
                         break;
 
                     // director
                     case 3:
-                        header("Location: ../director/director.php");
+                        header("Location: ../../views/director/director.php");
                         break;
 
                     // ponente
                     case 4:
-                        header("Location: ../ponente/ponente.php");
+                        header("Location: ../../views/ponente/ponente.php");
                         break;
 
                     default:
                         $_SESSION['error_login'] = "Rol de usuario no asignado o inválido.";
-                        header("Location: ../index.php");
+                        header("Location: ../../../index.php");
                         break;
                 }
 
@@ -75,17 +75,17 @@
 
             } else {
                 $_SESSION['error_login'] = "Correo o contraseña incorrectos";
-                header("Location: ../index.php");
+                header("Location: ../../../index.php");
                 exit;
             }
 
         } catch (Exception $e) {
             $_SESSION['error_login'] = "Error al iniciar sesión: " . $e->getMessage();
-            header("Location: ../index.php");
+            header("Location: ../../../index.php");
             exit;
         }
     } else {
-        header("Location: ../index.php");
+        header("Location: ../../../index.php");
         exit;
     }
 ?>

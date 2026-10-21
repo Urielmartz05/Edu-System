@@ -19,7 +19,7 @@
     <main class="login-main">
         <div class="login-main-container">
             <h1 class="login-title">Inicio de Sesión</h1>
-            <form class="login-form" action="./auth/loginProcess.php" method="POST">
+            <form class="login-form" action="./src/controllers/auth/loginProcess.php" method="POST">
                 <label>Email</label>
                 <input type="email" name="email" placeholder="Ingresa tu correo" required>
 
@@ -30,7 +30,7 @@
             </form>
 
             <p class="login-message"><?php echo htmlspecialchars($mensaje); ?></p>
-            <a class="login-link" href="./signup/signup.php">Crear cuenta</a>
+            <a class="login-link" href="./src/views/signup/signup.php">Crear cuenta</a>
         </div>
     </main>
 </body>

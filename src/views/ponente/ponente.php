@@ -1,5 +1,5 @@
 <?php
-    require_once("../auth/check_auth.php");
+    require_once("../../controllers/auth/check_auth.php");
     $user = getLoggedUser();
 ?>
 <!DOCTYPE html>
@@ -7,16 +7,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel de Administración</title>
-    <link rel="stylesheet" href="../ui/dashboard.css">
+    <title>Panel de Ponente</title>
+    <link rel="stylesheet" href="/ui/dashboard.css">
 </head>
 <body>
-    <?php include_once("../ui/header/header.php"); ?>
+    <?php include_once("../../../ui/header/header.php"); ?>
 
     <main class="dashboard-main">
         <div class="user-card">
             <div class="user-card-header">
-                <h1 class="user-card-title">Panel de Administración</h1>
+                <h1 class="user-card-title">Panel de Ponente</h1>
                 <p class="user-card-subtitle">Datos del usuario</p>
             </div>
 

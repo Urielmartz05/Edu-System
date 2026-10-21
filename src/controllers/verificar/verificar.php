@@ -1,5 +1,5 @@
 <?php
-    include_once "../connection.php";
+    include_once "../../config/connection.php";
     $conexion = createConnection();
 
     $token = trim($_GET["token"] ?? "");
@@ -23,7 +23,7 @@
 </head>
 <body>
  
-    <?php include_once('../ui/header/header.php') ?>
+    <?php include_once('../../../ui/header/header.php') ?>
 
     <main>
         <div class="verify-card">
@@ -40,13 +40,13 @@
                     $stmt->execute();
 
                     echo "<h1>Email confirmado</h1>";
-                    echo "<a href='../index.php' class='verify-link'>Iniciar Sesión</a>";
+                    echo "<a href='../../../index.php' class='verify-link'>Iniciar Sesión</a>";
                     
                 } else {
 
                     echo "<div class='error-box'>";
                     echo "<h1>Token inválido o expirado</h1>";
-                    echo "<a href='../index.php'>Volver al inicio</a>";
+                    echo "<a href='../../../index.php'>Volver al inicio</a>";
                     echo "</div>";
                 }
             ?>
