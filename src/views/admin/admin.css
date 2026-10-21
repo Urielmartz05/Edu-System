@@ -34,7 +34,7 @@
 .workspace .term small,#editor .term small{color:#7b5865;display:block}
 .workspace .term strong,#editor .term strong{font-size:15px;color:#632337}
 .workspace .kpi-grid,#editor .kpi-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin-bottom:24px}
-.workspace .kpi-grid.six,#editor .kpi-grid.six{grid-template-columns:repeat(3,minmax(0,1fr))}
+.workspace .kpi-grid.five,#editor .kpi-grid.five{grid-template-columns:repeat(5,minmax(0,1fr))}
 .workspace .kpi,#editor .kpi{border:1px solid var(--line);background:white;border-radius:var(--radius);padding:20px 22px;position:relative}
 .workspace .kpi-label,#editor .kpi-label{font-size:12px;color:var(--muted);font-weight:500}
 .workspace .kpi-value,#editor .kpi-value{display:block;font-size:30px;letter-spacing:-1px;line-height:1.25;font-weight:650;margin:10px 0}
@@ -117,11 +117,12 @@
 .skip-link{position:fixed;top:-100px;left:20px;z-index:100;background:white;padding:12px}
 .skip-link:focus{top:10px}
 body.modal-open{overflow:hidden}
-@media(min-width:1450px){.workspace .kpi-grid.six,#editor .kpi-grid.six{grid-template-columns:repeat(6,minmax(0,1fr))}
-.workspace .kpi-grid.six .kpi,#editor .kpi-grid.six .kpi{padding:18px 16px}
-.workspace .kpi-grid.six .kpi-index,#editor .kpi-grid.six .kpi-index{display:none}
+@media(min-width:1450px){.workspace .kpi-grid.five,#editor .kpi-grid.five{grid-template-columns:repeat(5,minmax(0,1fr))}
+.workspace .kpi-grid.five .kpi,#editor .kpi-grid.five .kpi{padding:18px 16px}
+.workspace .kpi-grid.five .kpi-index,#editor .kpi-grid.five .kpi-index{display:none}
 }
-@media(max-width:1100px){.workspace main,#editor main{padding:24px}
+@media(max-width:1100px){.workspace .kpi-grid.five{grid-template-columns:repeat(3,minmax(0,1fr))}
+.workspace main,#editor main{padding:24px}
 .workspace .grid,#editor .grid{grid-template-columns:minmax(0,1.4fr) minmax(240px,1fr)}
 .workspace .kpi,#editor .kpi{padding:18px 16px}
 .workspace .kpi-index,#editor .kpi-index{display:none}
@@ -130,7 +131,8 @@ body.modal-open{overflow:hidden}
 .workspace td,#editor td,.workspace th,#editor th{padding-inline:18px}
 .workspace .page-footer,#editor .page-footer{padding-inline:24px}
 }
-@media(max-width:850px){.workspace .grid,#editor .grid,.workspace .equal,#editor .equal{grid-template-columns:1fr}
+@media(max-width:850px){.workspace .kpi-grid.five{grid-template-columns:repeat(2,minmax(0,1fr))}
+.workspace .grid,#editor .grid,.workspace .equal,#editor .equal{grid-template-columns:1fr}
 .workspace .kpi-grid,#editor .kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
 .workspace .demo-notice,#editor .demo-notice{flex-wrap:wrap}
 .workspace .demo-notice>span:last-child,#editor .demo-notice>span:last-child{width:100%;margin-left:14px}
@@ -140,7 +142,7 @@ body.modal-open{overflow:hidden}
 .workspace .actions,#editor .actions{width:100%}
 .workspace .welcome,#editor .welcome{padding:20px;align-items:flex-start;flex-direction:column}
 .workspace .term,#editor .term{border-left:0;border-top:1px solid #d9bec7;padding:12px 0 0;width:100%}
-.workspace .kpi-grid,#editor .kpi-grid,.workspace .kpi-grid.six,#editor .kpi-grid.six{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.workspace .kpi-grid,#editor .kpi-grid,.workspace .kpi-grid.five,#editor .kpi-grid.five{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 .workspace .kpi,#editor .kpi{padding:16px 12px}
 .workspace .kpi-label,#editor .kpi-label{font-size:11px}
 .workspace .kpi-value,#editor .kpi-value{font-size:26px}

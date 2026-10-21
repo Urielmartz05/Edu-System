@@ -2,7 +2,7 @@
 
 Las cuatro vistas conservan el controlador de autenticación existente. Utilizan el header y la sidebar originales de `ui/`, sin modificarlos. Comparten la presentación de `components/layout.php`, `admin.css` y `admin.js`; no agregan endpoints, consultas ni cambios a la base de datos.
 
-- Dashboard: resumen de la comunidad, seis indicadores, actividad académica, seguimiento por curso y accesos a pendientes.
+- Dashboard: resumen de la comunidad, cinco indicadores, cursos con mayor participación y accesos a pendientes.
 - Usuarios y cursos: búsqueda sin distinción de acentos, filtros combinables, paginación, alta/edición y exportación CSV de los resultados filtrados.
 - Estadísticas: comparación de dos escenarios académicos, gráficos accesibles, rendimiento por curso y exportación del periodo seleccionado.
 
