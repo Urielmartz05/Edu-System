@@ -47,8 +47,7 @@
     }
     const progressRow = (label, value, note, tone = '') => `<div><div class="progress-title"><span>${escape(label)}</span><strong>${value}%</strong></div><div class="progress-track" role="progressbar" aria-label="${escape(label)}" aria-valuenow="${value}" aria-valuemin="0" aria-valuemax="100"><div class="progress-fill ${tone}" style="width:${value}%"></div></div>${note ? `<p class="list-note">${escape(note)}</p>` : ''}</div>`;
     function dashboard() {
-        root.innerHTML = heading('Panel general','Una visión integral de tu comunidad y su avance académico.', '<a class="btn" href="adminStatistics.php">Ver estadísticas <span aria-hidden="true">→</span></a><a class="btn primary" href="adminCourses.php">Gestionar cursos</a>') +
-        `<section class="welcome"><div><p class="eyebrow">TU COMUNIDAD, EN MOVIMIENTO</p><h2>Todo listo para seguir aprendiendo.</h2><p>Consulta el progreso de los cursos y las tareas que requieren atención.</p></div><div class="term"><small>Periodo académico de muestra</small><strong>Agosto – Diciembre 2026</strong></div></section>` +
+        root.innerHTML = `<section class="welcome" aria-labelledby="welcome-title"><h1 id="welcome-title">Bienvenido a tu comunidad académica</h1><img class="welcome-image" src="/resources/images/academic-welcome.svg" alt="" width="500" height="300"></section>` +
         kpis([
             ['Alumnos registrados',data.users.filter(u => u.role === 'Alumno').length,'Comunidad estudiantil'],
             ['Cursos publicados',published().length,`De ${data.courses.length} cursos en catálogo`],

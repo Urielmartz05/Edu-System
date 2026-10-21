@@ -27,12 +27,9 @@
 .workspace .btn.primary,#editor .btn.primary{background:var(--wine);border-color:var(--wine);color:white}
 .workspace .btn.primary:hover,#editor .btn.primary:hover{background:var(--wine-dark)}
 .workspace .btn.text,#editor .btn.text{padding:5px 0;background:none;border:0;color:var(--wine)}
-.workspace .welcome,#editor .welcome{background:#f0e6e9;border:1px solid #e9d9df;border-radius:var(--radius);padding:24px 28px;display:flex;justify-content:space-between;align-items:center;gap:24px;margin-bottom:24px;position:relative;overflow:hidden}
-.workspace .welcome h2,#editor .welcome h2{font-size:21px;color:#632337}
-.workspace .welcome p,#editor .welcome p{color:#7b5865;font-size:12px;margin-top:5px}
-.workspace .term,#editor .term{border-left:1px solid #d9bec7;padding-left:24px;white-space:nowrap}
-.workspace .term small,#editor .term small{color:#7b5865;display:block}
-.workspace .term strong,#editor .term strong{font-size:15px;color:#632337}
+.workspace .welcome{background:var(--wine);border-radius:var(--radius);padding:36px 44px;display:flex;justify-content:space-between;align-items:center;gap:24px;margin-bottom:24px;position:relative;overflow:hidden;min-height:230px}
+.workspace .welcome h1{color:white;font-size:clamp(26px,3vw,38px);line-height:1.25;max-width:530px;letter-spacing:-.8px;position:relative;z-index:1;text-wrap:balance}
+.workspace .welcome-image{width:40%;max-width:360px;height:auto;flex-shrink:0;margin:-24px -16px -24px 0}
 .workspace .kpi-grid,#editor .kpi-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin-bottom:24px}
 .workspace .kpi-grid.five,#editor .kpi-grid.five{grid-template-columns:repeat(5,minmax(0,1fr))}
 .workspace .kpi,#editor .kpi{border:1px solid var(--line);background:white;border-radius:var(--radius);padding:20px 22px;position:relative}
@@ -140,8 +137,9 @@ body.modal-open{overflow:hidden}
 @media(max-width:540px){.workspace main,#editor main{padding:20px 16px}
 .workspace .page-heading,#editor .page-heading{flex-direction:column;gap:16px}
 .workspace .actions,#editor .actions{width:100%}
-.workspace .welcome,#editor .welcome{padding:20px;align-items:flex-start;flex-direction:column}
-.workspace .term,#editor .term{border-left:0;border-top:1px solid #d9bec7;padding:12px 0 0;width:100%}
+.workspace .welcome{padding:28px 24px;gap:12px;flex-direction:column;align-items:flex-start}
+.workspace .welcome h1{font-size:27px}
+.workspace .welcome-image{width:85%;max-width:260px;margin:-12px -12px -40px auto}
 .workspace .kpi-grid,#editor .kpi-grid,.workspace .kpi-grid.five,#editor .kpi-grid.five{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 .workspace .kpi,#editor .kpi{padding:16px 12px}
 .workspace .kpi-label,#editor .kpi-label{font-size:11px}
