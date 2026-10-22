@@ -73,8 +73,8 @@
                     <label>Rol:</label>
                     <select name="role" required>
                         <option value="">Selecciona un rol</option>
-                        <option value="2">Alumno</option>
-                        <option value="3">Director</option>
+                        <option value="3">Alumno</option>
+                        <option value="2">Director</option>
                         <option value="4">Ponente</option>
                     </select>
 

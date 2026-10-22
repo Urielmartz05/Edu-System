@@ -8,23 +8,18 @@ $user = getLoggedUser();
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Estadísticas · Edu-System</title>
-        <link rel="stylesheet" href="admin.css">
+        <link rel="stylesheet" href="statistics.css">
     </head>
     <body>
-        <a class="skip-link" href="#main">Saltar al contenido</a>
         <?php include __DIR__ . '/../../../ui/header/header.php'; ?>
         <?php include __DIR__ . '/../../../ui/adminSideBar/adminSideBar.php'; ?>
 
         <div class="workspace">
-            <main id="main" tabindex="-1">
-                <div class="demo-notice">
-                    <span class="notice-dot"></span>Vista de demostración
-                    <span>Datos ilustrativos. Las acciones de gestión se habilitarán al conectar el backend.</span>
-                </div>
-
+            <main>
+                
                 <!-- Contenido de Estadísticas: edita aquí los textos, las tarjetas y las tablas. -->
                 <div id="page-content">
-                    <!-- Presentación HTML con datos de muestra; sin persistencia ni JavaScript. -->
+                    <!-- Academic statistics presentation prepared for real backend data. -->
                     <section class="page-heading">
                         <div>
                             <p class="eyebrow">GESTIÓN ACADÉMICA</p>
@@ -42,30 +37,22 @@ $user = getLoggedUser();
                             <button class="btn" type="button" disabled title="Exportación pendiente de conectar al backend">Exportar informe</button>
                         </div>
                     </section>
-                    <section class="kpi-grid " aria-label="Indicadores de demostración">
+                    <section class="kpi-grid">
                         <article class="kpi">
-                            <span class="kpi-index">01</span>
                             <h2 class="kpi-label">Inscripciones</h2>
-                            <strong class="kpi-value">104</strong>
-                            <p class="kpi-note">Total en el periodo de muestra</p>
+                            <strong class="kpi-value"><!-- Dynamic value: total enrollments in report period --></strong>
                         </article>
                         <article class="kpi">
-                            <span class="kpi-index">02</span>
                             <h2 class="kpi-label">Tasa de finalización</h2>
-                            <strong class="kpi-value">74%</strong>
-                            <p class="kpi-note">Inscripciones con curso finalizado</p>
+                            <strong class="kpi-value"><!-- Dynamic value: course completion rate percentage --></strong>
                         </article>
                         <article class="kpi">
-                            <span class="kpi-index">03</span>
                             <h2 class="kpi-label">Avance promedio</h2>
-                            <strong class="kpi-value">70%</strong>
-                            <p class="kpi-note">En los cursos publicados</p>
+                            <strong class="kpi-value"><!-- Dynamic value: average syllabus progress percentage --></strong>
                         </article>
                         <article class="kpi">
-                            <span class="kpi-index">04</span>
                             <h2 class="kpi-label">Calificación promedio</h2>
-                            <strong class="kpi-value">8.6 / 10</strong>
-                            <p class="kpi-note">Promedio de evaluaciones de muestra</p>
+                            <strong class="kpi-value"><!-- Dynamic value: average student grade (e.g. X.X / 10) --></strong>
                         </article>
                     </section>
                     <div class="grid">
@@ -75,7 +62,7 @@ $user = getLoggedUser();
                                     <h2>Evolución del aprendizaje</h2>
                                     <p>Inscripciones y finalizaciones por mes</p>
                                 </div>
-                                <span class="pill ">Ago–Dic 2026</span>
+                                <span class="pill "><!-- Dynamic value: period label --></span>
                             </div>
                             <div class="chart">
                                 <div class="chart-legend">
@@ -86,54 +73,20 @@ $user = getLoggedUser();
                                         <i class="legend-dot light">
                                         </i>Finalizaciones</span>
                                 </div>
-                                <div class="bar-chart" role="img" aria-label="Datos ilustrativos: Jul: 22 inscripciones y 10 finalizaciones; Ago: 37 inscripciones y 15 finalizaciones; Sep: 48 inscripciones y 25 finalizaciones; Oct: 57 inscripciones y 32 finalizaciones; Nov: 64 inscripciones y 42 finalizaciones; Dic: 71 inscripciones y 51 finalizaciones">
+                                <div class="bar-chart">
+                                    <!-- Dynamic bar-groups: iterate over monthly statistics -->
+                                    <!--
                                     <div class="bar-group">
-                                        <div class="bar" style="height:27.500000000000004%" title="Jul: 22 inscripciones">
-                                        </div>
-                                        <div class="bar light" style="height:12.5%" title="10 finalizaciones">
-                                        </div>
+                                        <div class="bar" style="height: [enrollments_percentage]%" title="[Month]: [count] inscripciones"></div>
+                                        <div class="bar light" style="height: [completions_percentage]%" title="[count] finalizaciones"></div>
                                     </div>
-                                    <div class="bar-group">
-                                        <div class="bar" style="height:46.25%" title="Ago: 37 inscripciones">
-                                        </div>
-                                        <div class="bar light" style="height:18.75%" title="15 finalizaciones">
-                                        </div>
-                                    </div>
-                                    <div class="bar-group">
-                                        <div class="bar" style="height:60%" title="Sep: 48 inscripciones">
-                                        </div>
-                                        <div class="bar light" style="height:31.25%" title="25 finalizaciones">
-                                        </div>
-                                    </div>
-                                    <div class="bar-group">
-                                        <div class="bar" style="height:71.25%" title="Oct: 57 inscripciones">
-                                        </div>
-                                        <div class="bar light" style="height:40%" title="32 finalizaciones">
-                                        </div>
-                                    </div>
-                                    <div class="bar-group">
-                                        <div class="bar" style="height:80%" title="Nov: 64 inscripciones">
-                                        </div>
-                                        <div class="bar light" style="height:52.5%" title="42 finalizaciones">
-                                        </div>
-                                    </div>
-                                    <div class="bar-group">
-                                        <div class="bar" style="height:88.75%" title="Dic: 71 inscripciones">
-                                        </div>
-                                        <div class="bar light" style="height:63.74999999999999%" title="51 finalizaciones">
-                                        </div>
-                                    </div>
+                                    -->
                                 </div>
-                                <div class="chart-labels" aria-hidden="true">
-                                    <span>Jul</span>
-                                    <span>Ago</span>
-                                    <span>Sep</span>
-                                    <span>Oct</span>
-                                    <span>Nov</span>
-                                    <span>Dic</span>
+                                <div class="chart-labels">
+                                    <!-- Dynamic labels: iterate over month abbreviations (e.g. <span>Jul</span>) -->
                                 </div>
                             </div>
-                            <p class="chart-foot">Número de registros por mes · Serie de ejemplo</p>
+                            <p class="chart-foot"><!-- Dynamic summary note for monthly chart data --></p>
                         </section>
                         <section class="panel">
                             <div class="panel-head">
@@ -143,45 +96,25 @@ $user = getLoggedUser();
                                 </div>
                             </div>
                             <div class="progress-list">
+                                <!-- Dynamic progress items: iterate over grade distribution tiers -->
+                                <!--
                                 <div>
                                     <div class="progress-title">
-                                        <span>Sobresaliente · 9 a 10</span>
-                                        <strong>38%</strong>
+                                        <span><!-- Grade range tier title --></span>
+                                        <strong><!-- Tier percentage --></strong>
                                     </div>
-                                    <div class="progress-track" role="progressbar" aria-label="Sobresaliente · 9 a 10" aria-valuenow="38" aria-valuemin="0" aria-valuemax="100">
-                                        <div class="progress-fill green" style="width:38%">
-                                        </div>
+                                    <div class="progress-track">
+                                        <div class="progress-fill green" style="width:<!-- Tier percentage -->%"></div>
                                     </div>
-                                    <p class="list-note">Porcentaje de alumnos evaluados</p>
+                                    <p class="list-note"><!-- Tier description note --></p>
                                 </div>
-                                <div>
-                                    <div class="progress-title">
-                                        <span>Satisfactorio · 7 a 8.9</span>
-                                        <strong>46%</strong>
-                                    </div>
-                                    <div class="progress-track" role="progressbar" aria-label="Satisfactorio · 7 a 8.9" aria-valuenow="46" aria-valuemin="0" aria-valuemax="100">
-                                        <div class="progress-fill " style="width:46%">
-                                        </div>
-                                    </div>
-                                    <p class="list-note">Porcentaje de alumnos evaluados</p>
-                                </div>
-                                <div>
-                                    <div class="progress-title">
-                                        <span>Requiere apoyo · Menos de 7</span>
-                                        <strong>16%</strong>
-                                    </div>
-                                    <div class="progress-track" role="progressbar" aria-label="Requiere apoyo · Menos de 7" aria-valuenow="16" aria-valuemin="0" aria-valuemax="100">
-                                        <div class="progress-fill gold" style="width:16%">
-                                        </div>
-                                    </div>
-                                    <p class="list-note">Seguimiento académico recomendado</p>
-                                </div>
+                                -->
                             </div>
                         </section>
                     </div>
                     <aside class="insight">
                         <strong>Acompañamiento académico</strong>
-                        <p>El 16% de los alumnos de este escenario requiere apoyo. Revisa el avance por curso para orientar las acciones de seguimiento.</p>
+                        <p><!-- Dynamic recommendation or academic insight text --></p>
                     </aside>
                     <section class="panel">
                         <div class="panel-head">
@@ -202,66 +135,15 @@ $user = getLoggedUser();
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <tr>
-                                        <td>
-                                            <span class="cell-title">Matemáticas aplicadas</span>
-                                            <span class="cell-sub">Laura Méndez</span>
-                                        </td>
-                                        <td>32</td>
-                                        <td>80%</td>
-                                        <td>78%</td>
-                                        <td>
-                                            <span class="pill green">En buen avance</span>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>
-                                            <span class="cell-title">Fundamentos de programación</span>
-                                            <span class="cell-sub">Carlos Rivera</span>
-                                        </td>
-                                        <td>28</td>
-                                        <td>80%</td>
-                                        <td>65%</td>
-                                        <td>
-                                            <span class="pill amber">Requiere seguimiento</span>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>
-                                            <span class="cell-title">Comunicación académica</span>
-                                            <span class="cell-sub">Laura Méndez</span>
-                                        </td>
-                                        <td>24</td>
-                                        <td>80%</td>
-                                        <td>84%</td>
-                                        <td>
-                                            <span class="pill green">En buen avance</span>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>
-                                            <span class="cell-title">Análisis de datos</span>
-                                            <span class="cell-sub">Carlos Rivera</span>
-                                        </td>
-                                        <td>20</td>
-                                        <td>67%</td>
-                                        <td>52%</td>
-                                        <td>
-                                            <span class="pill amber">Requiere seguimiento</span>
-                                        </td>
-                                    </tr>
+                                    <!-- Statistical breakdown records will be loaded dynamically here -->
                                 </tbody>
                             </table>
                         </div>
                     </section>
-                    <p class="subtitle">La finalización, las calificaciones y las series mensuales son escenarios ilustrativos; no representan información institucional real.</p>
+                    <!-- Dynamic notes / report disclaimer here -->
 
                 </div>
             </main>
-            <footer class="page-footer">
-                <span>Edu-System · Gestión académica</span>
-                <span>Un espacio para la educación</span>
-            </footer>
         </div>
     </body>
 </html>

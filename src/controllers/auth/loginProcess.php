@@ -43,31 +43,58 @@
                 $_SESSION['email'] = $usuario['email'];
                 $_SESSION['role_id'] = $usuario['role'];
 
-                switch ($usuario["role"]) {
+                include_once __DIR__ . "/../role/getRoleType.php";
+                $roleType = strtolower(trim(getRoleType($usuario["role"]) ?? ''));
 
-                    // Admin
-                    case 1:
+                switch ($roleType) {
+                    case 'admin':
+                    case 'administrador':
                         header("Location: ../../views/admin/adminDashboard.php");
                         break;
 
-                    // alumno
-                    case 2:
-                        header("Location: ../../views/alumno/alumno.php");
-                        break;
-
-                    // director
-                    case 3:
+                    case 'director':
                         header("Location: ../../views/director/director.php");
                         break;
 
-                    // ponente
-                    case 4:
+                    case 'alumno':
+                    case 'estudiante':
+                        header("Location: ../../views/alumno/alumno.php");
+                        break;
+
+                    case 'ponente':
+                    case 'docente':
+                    case 'profesor':
                         header("Location: ../../views/ponente/ponente.php");
                         break;
 
                     default:
-                        $_SESSION['error_login'] = "Rol de usuario no asignado o inválido.";
-                        header("Location: ../../../index.php");
+                        // Fallback por ID si no se pudo consultar el roleType
+                        switch ((int)$usuario["role"]) {
+                            // Admin
+                            case 1:
+                                header("Location: ../../views/admin/adminDashboard.php");
+                                break;
+
+                            // Director
+                            case 2:
+                                header("Location: ../../views/director/director.php");
+                                break;
+
+                            // Alumno
+                            case 3:
+                                header("Location: ../../views/alumno/alumno.php");
+                                break;
+
+                            // Ponente
+                            case 4:
+                                header("Location: ../../views/ponente/ponente.php");
+                                break;
+
+                            default:
+                                $_SESSION['error_login'] = "Rol de usuario no asignado o inválido.";
+                                header("Location: ../../../index.php");
+                                break;
+                        }
                         break;
                 }
 

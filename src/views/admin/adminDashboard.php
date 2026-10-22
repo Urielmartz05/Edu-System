@@ -8,65 +8,50 @@ $user = getLoggedUser();
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Panel general · Edu-System</title>
-        <link rel="stylesheet" href="admin.css">
+        <link rel="stylesheet" href="dashboard.css">
     </head>
     <body>
-        <a class="skip-link" href="#main">Saltar al contenido</a>
         <?php include __DIR__ . '/../../../ui/header/header.php'; ?>
         <?php include __DIR__ . '/../../../ui/adminSideBar/adminSideBar.php'; ?>
 
         <div class="workspace">
-            <main id="main" tabindex="-1">
-                <div class="demo-notice">
-                    <span class="notice-dot"></span>Vista de demostración
-                    <span>Datos ilustrativos. Las acciones de gestión se habilitarán al conectar el backend.</span>
-                </div>
-
+            <main>
+                
                 <!-- Contenido de Panel general: edita aquí los textos, las tarjetas y las tablas. -->
                 <div id="page-content">
-                    <!-- Presentación HTML con datos de muestra; sin persistencia ni JavaScript. -->
-                    <section class="welcome" aria-labelledby="welcome-title">
-                        <h1 id="welcome-title">Bienvenido a tu comunidad académica</h1>
+                    <!-- Dashboard presentation prepared for real backend data. -->
+                    <section class="welcome">
+                        <h1>Bienvenido a tu comunidad académica</h1>
                         <img class="welcome-image" src="/resources/images/academic-welcome.svg" alt="" width="500" height="300">
                     </section>
-                    <section class="kpi-grid five" aria-label="Indicadores de demostración">
+                    <section class="kpi-grid five">
                         <article class="kpi">
-                            <span class="kpi-index">01</span>
                             <h2 class="kpi-label">Alumnos registrados</h2>
-                            <strong class="kpi-value">4</strong>
-                            <p class="kpi-note">Comunidad estudiantil</p>
+                            <strong class="kpi-value"><!-- Dynamic value: registered students count --></strong>
                         </article>
                         <article class="kpi">
-                            <span class="kpi-index">02</span>
                             <h2 class="kpi-label">Cursos publicados</h2>
-                            <strong class="kpi-value">4</strong>
-                            <p class="kpi-note">De 6 cursos en catálogo</p>
+                            <strong class="kpi-value"><!-- Dynamic value: published courses count --></strong>
                         </article>
                         <article class="kpi">
-                            <span class="kpi-index">03</span>
                             <h2 class="kpi-label">Inscripciones</h2>
-                            <strong class="kpi-value">104</strong>
-                            <p class="kpi-note">En los cursos del periodo</p>
+                            <strong class="kpi-value"><!-- Dynamic value: total enrollments in active term --></strong>
                         </article>
                         <article class="kpi">
-                            <span class="kpi-index">04</span>
                             <h2 class="kpi-label">Ponentes</h2>
-                            <strong class="kpi-value">2</strong>
-                            <p class="kpi-note">Equipo docente registrado</p>
+                            <strong class="kpi-value"><!-- Dynamic value: registered teachers count --></strong>
                         </article>
                         <article class="kpi">
-                            <span class="kpi-index">05</span>
                             <h2 class="kpi-label">Cuentas pendientes</h2>
-                            <strong class="kpi-value">1</strong>
-                            <p class="kpi-note">Pendientes de verificación</p>
+                            <strong class="kpi-value"><!-- Dynamic value: pending verification accounts count --></strong>
                         </article>
                     </section>
                     <div class="quick-links">
-                        <a class="quick-link" href="adminUsers.php">Administrar comunidad <span aria-hidden="true">→</span>
+                        <a class="quick-link" href="adminUsers.php">Administrar comunidad <span>→</span>
                         </a>
-                        <a class="quick-link" href="adminCourses.php">Revisar catálogo de cursos <span aria-hidden="true">→</span>
+                        <a class="quick-link" href="adminCourses.php">Revisar catálogo de cursos <span>→</span>
                         </a>
-                        <a class="quick-link" href="adminStatistics.php">Consultar rendimiento <span aria-hidden="true">→</span>
+                        <a class="quick-link" href="adminStatistics.php">Consultar rendimiento <span>→</span>
                         </a>
                     </div>
                     <div class="grid">
@@ -88,51 +73,8 @@ $user = getLoggedUser();
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <tr>
-                                            <td>
-                                                <span class="cell-title">Matemáticas aplicadas</span>
-                                                <span class="cell-sub">Laura Méndez</span>
-                                            </td>
-                                            <td>32 <span class="cell-sub">de 40 lugares</span>
-                                            </td>
-                                            <td>
-                                                <span class="pill green">Publicado</span>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td>
-                                                <span class="cell-title">Fundamentos de programación</span>
-                                                <span class="cell-sub">Carlos Rivera</span>
-                                            </td>
-                                            <td>28 <span class="cell-sub">de 35 lugares</span>
-                                            </td>
-                                            <td>
-                                                <span class="pill green">Publicado</span>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td>
-                                                <span class="cell-title">Comunicación académica</span>
-                                                <span class="cell-sub">Laura Méndez</span>
-                                            </td>
-                                            <td>24 <span class="cell-sub">de 30 lugares</span>
-                                            </td>
-                                            <td>
-                                                <span class="pill green">Publicado</span>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td>
-                                                <span class="cell-title">Análisis de datos</span>
-                                                <span class="cell-sub">Carlos Rivera</span>
-                                            </td>
-                                            <td>20 <span class="cell-sub">de 30 lugares</span>
-                                            </td>
-                                            <td>
-                                                <span class="pill green">Publicado</span>
-                                            </td>
-                                        </tr>
-                                    </tbody>
+                                    <!-- System activity logs will be loaded dynamically here -->
+                                </tbody>
                                 </table>
                             </div>
                         </section>
@@ -144,11 +86,12 @@ $user = getLoggedUser();
                                 </div>
                             </div>
                             <div class="timeline">
+                                <!-- Dynamic follow-up notifications -->
                                 <div class="timeline-item">
                                     <span class="timeline-mark">
                                     </span>
                                     <div>
-                                        <strong>Cuentas por verificar: 1</strong>
+                                        <strong>Cuentas por verificar: <!-- Dynamic count: pending users --></strong>
                                         <p>Revisa el estado de los nuevos usuarios.</p>
                                         <a class="btn text" href="adminUsers.php?status=Pendiente">Revisar usuarios →</a>
                                     </div>
@@ -157,7 +100,7 @@ $user = getLoggedUser();
                                     <span class="timeline-mark">
                                     </span>
                                     <div>
-                                        <strong>Cursos en revisión: 1</strong>
+                                        <strong>Cursos en revisión: <!-- Dynamic count: courses under review --></strong>
                                         <p>Consulta los cursos pendientes de publicación.</p>
                                         <a class="btn text" href="adminCourses.php?status=En%20revisi%C3%B3n">Revisar cursos →</a>
                                     </div>
@@ -177,10 +120,6 @@ $user = getLoggedUser();
 
                 </div>
             </main>
-            <footer class="page-footer">
-                <span>Edu-System · Gestión académica</span>
-                <span>Un espacio para la educación</span>
-            </footer>
         </div>
     </body>
 </html>

@@ -13,9 +13,9 @@ function getRoleName($role_id) {
         case 1:
             return "Administrador";
         case 2:
-            return "Alumno";
-        case 3:
             return "Director";
+        case 3:
+            return "Alumno";
         case 4:
             return "Ponente";
         default:
