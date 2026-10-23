@@ -1,6 +1,15 @@
 <?php
-require_once __DIR__ . '/../../controllers/auth/check_auth.php';
-$user = getLoggedUser();
+    require_once __DIR__ . '/../../controllers/auth/check_auth.php';
+    require_once __DIR__ . '/../../models/adminModels/adminModels.php';
+    $user = getLoggedUser();
+
+    $adminDashboard = new AdminDashboard();
+    $studentCount = $adminDashboard->getStudentsCount();
+    $courseCount = $adminDashboard->getCourseCount();
+    $teacherCount = $adminDashboard->getTeachersCount();
+    $pendingAccountsCount = $adminDashboard->getPendingAccountsCount();
+    $coursesInReviewCount = $adminDashboard->getCoursesInReviewCount();
+    $topCourses = $adminDashboard->getTopCourses();
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -17,33 +26,29 @@ $user = getLoggedUser();
         <div class="workspace">
             <main>
                 
-                <!-- Contenido de Panel general: edita aquí los textos, las tarjetas y las tablas. -->
+                <!-- Content for the admin dashboard -->
                 <div id="page-content">
                     <!-- Dashboard presentation prepared for real backend data. -->
                     <section class="welcome">
                         <h1>Bienvenido a tu comunidad académica</h1>
                         <img class="welcome-image" src="/resources/images/academic-welcome.svg" alt="" width="500" height="300">
                     </section>
-                    <section class="kpi-grid five">
+                    <section class="kpi-grid">
                         <article class="kpi">
-                            <h2 class="kpi-label">Alumnos registrados</h2>
-                            <strong class="kpi-value"><!-- Dynamic value: registered students count --></strong>
+                            <h2 class="kpi-label">Registered Students</h2>
+                            <strong class="kpi-value"><?php echo $studentCount ?></strong>
                         </article>
                         <article class="kpi">
-                            <h2 class="kpi-label">Cursos publicados</h2>
-                            <strong class="kpi-value"><!-- Dynamic value: published courses count --></strong>
-                        </article>
-                        <article class="kpi">
-                            <h2 class="kpi-label">Inscripciones</h2>
-                            <strong class="kpi-value"><!-- Dynamic value: total enrollments in active term --></strong>
+                            <h2 class="kpi-label">Courses Published</h2>
+                            <strong class="kpi-value"><?php echo $courseCount ?></strong>
                         </article>
                         <article class="kpi">
                             <h2 class="kpi-label">Ponentes</h2>
-                            <strong class="kpi-value"><!-- Dynamic value: registered teachers count --></strong>
+                            <strong class="kpi-value"><?php echo $teacherCount ?></strong>
                         </article>
                         <article class="kpi">
                             <h2 class="kpi-label">Cuentas pendientes</h2>
-                            <strong class="kpi-value"><!-- Dynamic value: pending verification accounts count --></strong>
+                            <strong class="kpi-value"><?php echo $pendingAccountsCount; ?></strong>
                         </article>
                     </section>
                     <div class="quick-links">
@@ -73,7 +78,26 @@ $user = getLoggedUser();
                                         </tr>
                                     </thead>
                                     <tbody>
-                                    <!-- System activity logs will be loaded dynamically here -->
+                                    <?php if (!empty($topCourses)): ?>
+                                        <?php foreach ($topCourses as $course): ?>
+                                            <tr>
+                                                <td>
+                                                    <span class="cell-title"><?php echo htmlspecialchars($course['course_name']); ?></span>
+                                                    <span class="cell-sub"><?php echo htmlspecialchars($course['teacher_name']); ?></span>
+                                                </td>
+                                                <td><?php echo (int) $course['total_students']; ?></td>
+                                                <td>
+                                                    <span class="pill <?php echo ((int)$course['status'] === 1 ? 'green' : 'amber'); ?>">
+                                                        <?php echo ((int)$course['status'] === 1 ? 'Publicado' : 'En revisión'); ?>
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        <?php endforeach; ?>
+                                    <?php else: ?>
+                                        <tr>
+                                            <td colspan="3" style="text-align: center; color: #64748b;">No hay cursos registrados</td>
+                                        </tr>
+                                    <?php endif; ?>
                                 </tbody>
                                 </table>
                             </div>
@@ -91,7 +115,7 @@ $user = getLoggedUser();
                                     <span class="timeline-mark">
                                     </span>
                                     <div>
-                                        <strong>Cuentas por verificar: <!-- Dynamic count: pending users --></strong>
+                                        <strong>Cuentas por verificar: <?php echo $pendingAccountsCount; ?></strong>
                                         <p>Revisa el estado de los nuevos usuarios.</p>
                                         <a class="btn text" href="adminUsers.php?status=Pendiente">Revisar usuarios →</a>
                                     </div>
@@ -100,7 +124,7 @@ $user = getLoggedUser();
                                     <span class="timeline-mark">
                                     </span>
                                     <div>
-                                        <strong>Cursos en revisión: <!-- Dynamic count: courses under review --></strong>
+                                        <strong>Cursos en revisión: <?php echo $coursesInReviewCount; ?></strong>
                                         <p>Consulta los cursos pendientes de publicación.</p>
                                         <a class="btn text" href="adminCourses.php?status=En%20revisi%C3%B3n">Revisar cursos →</a>
                                     </div>

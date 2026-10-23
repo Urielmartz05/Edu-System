@@ -24,7 +24,7 @@
         <?php 
             if (isset($_SESSION['user_id'])) {
                 echo "<div class='user-session'>
-                        <p class='user'>" . htmlspecialchars($roleType ?: $_SESSION['name']) . "!</p>
+                        <p class='user'>" . htmlspecialchars(ucfirst(strtolower($roleType ?: 'Usuario'))) . "</p>
                         <a href='/src/controllers/logout/logout.php' class='logout-link'>Log out</a>
                       </div>";
             }

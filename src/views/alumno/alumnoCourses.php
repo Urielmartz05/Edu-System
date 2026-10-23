@@ -57,8 +57,8 @@
                     </div>
 
                     <div class="filters-bar">
-                        <input type="search" class="search-input" placeholder="Buscar por clave o nombre de materia..." disabled title="Filtro disponible en siguiente fase">
-                        <select class="filter-select" disabled title="Filtro disponible en siguiente fase">
+                        <input type="search" class="search-input" placeholder="Buscar por clave o nombre de materia...">
+                        <select class="filter-select">
                             <option>Todos los estados</option>
                             <option>Cursando</option>
                             <option>Concluida</option>

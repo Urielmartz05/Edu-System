@@ -13,6 +13,8 @@
             die("Error de conexion: " . $connection->connect_error);
         }
 
+        $connection->set_charset("utf8mb4");
+
         return $connection;
     }
 

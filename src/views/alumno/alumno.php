@@ -99,9 +99,6 @@
                         <div class="task-list">
                             <!-- Upcoming assignments will be loaded dynamically here -->
                         </div>
-                            </div>
-                            */ ?>
-                        </div>
                     </section>
                 </div>
             </div>

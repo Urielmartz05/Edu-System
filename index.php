@@ -1,20 +1,22 @@
 <?php
-    session_start();
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
     $mensaje = $_SESSION['error_login'] ?? '';
     unset($_SESSION['error_login']);
 ?>
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <link rel="stylesheet" href="style.css">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Iniciar Sesión · Edu-System</title>
 </head>
 <body>
 
-    <?php include_once("./ui/header/header.php"); ?>
+    <?php include_once __DIR__ . "/ui/header/header.php"; ?>
 
     <main class="login-main">
         <div class="login-main-container">

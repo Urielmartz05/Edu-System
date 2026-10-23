@@ -99,12 +99,6 @@
                         <div class="activity-list">
                             <!-- Upcoming notices and events will be loaded dynamically here -->
                         </div>
-                            </div>
-                            */ ?>
-                        </div>
-                            </div>
-                            -->
-                        </div>
                     </section>
                 </div>
             </div>

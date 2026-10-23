@@ -28,7 +28,7 @@
             <li class="dashboard-option">
                 <a href="/src/views/admin/adminDashboard.php" class="sidebar-link">
                     <div class="option <?php echo ($currentPage == 'adminDashboard.php') ? 'active' : ''; ?>">
-                        <img src="/resources/images/home.png" alt="Dashboard" class="icon">
+                        <img src="/resources/images/Home.png" alt="Dashboard" class="icon">
                         <p>Dashboard</p>
                     </div>
                 </a>
@@ -50,11 +50,12 @@
                 </a>
             </li>
             <li class="statistics-option">
-                <div class="option <?php echo ($currentPage == 'adminStatistics.php') ? 'active' : ''; ?>">
-                    <img src="/resources/images/Stats.png" alt="Statistics" class="icon">
-                    <p>Statistics</p>
-
-                </div>
+                <a href="/src/views/admin/adminStatistics.php" class="sidebar-link">
+                    <div class="option <?php echo ($currentPage == 'adminStatistics.php') ? 'active' : ''; ?>">
+                        <img src="/resources/images/Stats.png" alt="Statistics" class="icon">
+                        <p>Statistics</p>
+                    </div>
+                </a>
             </li>
         </ul>
 

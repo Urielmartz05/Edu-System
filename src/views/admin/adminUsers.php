@@ -27,7 +27,7 @@ $user = getLoggedUser();
                             <p class="subtitle">Administra los perfiles, roles y accesos de tu institución.</p>
                         </div>
                         <div class="actions">
-                            <button class="btn" type="button" disabled title="Exportación pendiente de conectar al backend">Exportar CSV</button>
+                            <button class="btn" type="button">Exportar CSV</button>
                         </div>
                     </section>
                     <section class="kpi-grid">
@@ -59,13 +59,13 @@ $user = getLoggedUser();
                         <div class="filters">
                             <label class="search">
                                 <span class="filter-label">Buscar por nombre, correo o ID</span>
-                                <input class="field" id="search" disabled title="Búsqueda pendiente de conectar al backend" type="search" placeholder="Buscar por nombre, correo o ID…">
+                                <input class="field" id="search" type="search" placeholder="Buscar por nombre, correo o ID…">
                             </label>
                             <label>
                                 <span class="filter-label">Rol</span>
-                                <select id="category" disabled title="Filtros pendientes de conectar al backend">
+                                <select id="category">
                                     <option value="">Todos los roles</option>
-                                    <option>Alumno</option>
+                                    <option>Student</option>
                                     <option>Ponente</option>
                                     <option>Director</option>
                                     <option>Administrador</option>
@@ -73,7 +73,7 @@ $user = getLoggedUser();
                             </label>
                             <label>
                                 <span class="filter-label">Estado</span>
-                                <select id="status" disabled title="Filtros pendientes de conectar al backend">
+                                <select id="status">
                                     <option value="">Todos los estados</option>
                                     <option>Verificado</option>
                                     <option>Pendiente</option>
@@ -100,7 +100,7 @@ $user = getLoggedUser();
                             <span><!-- Dynamic value: pagination summary (e.g. Mostrando X–Y de Z registros) --></span>
                         </div>
                     </section>
-                    <p class="subtitle">Los roles organizan la participación de alumnos, ponentes, directores y administradores.</p>
+                    <p class="subtitle">Los roles organizan la participación de estudiantes, ponentes, directores y administradores.</p>
 
                 </div>
             </main>

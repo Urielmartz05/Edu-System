@@ -1,118 +1,90 @@
 <?php
 
-    include_once('../../config/connection.php');
-    $connection = createConnection();
+if (session_status() === PHP_SESSION_NONE) {
     session_start();
-    $mensaje = '';
+}
 
-    if($_SERVER['REQUEST_METHOD'] == 'POST'){
-        $email = trim($_POST['email'] ?? '');
-        $password = trim($_POST['password'] ?? '');
+include_once __DIR__ . '/../../config/connection.php';
+$connection = createConnection();
 
-        try {
-            $sql = "SELECT * FROM users WHERE email = ?";
-            $stmt = $connection->prepare($sql);
-            $stmt->bind_param("s", $email);
-            $stmt->execute();
-            $resultado = $stmt->get_result();
-            $usuario = $resultado->fetch_assoc();
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $email = trim($_POST['email'] ?? '');
+    $password = trim($_POST['password'] ?? '');
 
-            $autenticado = false;
-            if ($usuario) {
-                if (password_verify($password, $usuario['password'])) {
-                    $autenticado = true;
-                } elseif ($password === $usuario['password']) {
-                    $autenticado = true;
-                    $nuevoHash = password_hash($password, PASSWORD_DEFAULT);
-                    $upd = $connection->prepare("UPDATE users SET password = ? WHERE id = ?");
-                    $upd->bind_param("si", $nuevoHash, $usuario['id']);
-                    $upd->execute();
-                }
+    try {
+        $sql = "SELECT * FROM users WHERE email = ?";
+        $stmt = $connection->prepare($sql);
+        $stmt->bind_param("s", $email);
+        $stmt->execute();
+        $resultado = $stmt->get_result();
+        $usuario = $resultado->fetch_assoc();
+
+        $autenticado = false;
+        if ($usuario) {
+            if (password_verify($password, $usuario['password'])) {
+                $autenticado = true;
+            } elseif ($password === $usuario['password']) {
+                $autenticado = true;
+                $nuevoHash = password_hash($password, PASSWORD_DEFAULT);
+                $upd = $connection->prepare("UPDATE users SET password = ? WHERE id = ?");
+                $upd->bind_param("si", $nuevoHash, $usuario['id']);
+                $upd->execute();
             }
+        }
 
-            if ($usuario && $autenticado) {
-                if (isset($usuario['email_verificado']) && (int)$usuario['email_verificado'] === 0) {
-                    $_SESSION['error_login'] = "Debes confirmar tu correo antes de iniciar sesión.";
-                    header("Location: ../../../index.php");
-                    exit;
-                }
+        if ($usuario && $autenticado) {
+            $estaVerificado = ((int)($usuario['verified'] ?? 0) === 1);
 
-                $_SESSION['user_id'] = $usuario['id'];
-                $_SESSION['name'] = $usuario['name'];
-                $_SESSION['lastname'] = $usuario['lastname'] ?? '';
-                $_SESSION['email'] = $usuario['email'];
-                $_SESSION['role_id'] = $usuario['role'];
-
-                include_once __DIR__ . "/../role/getRoleType.php";
-                $roleType = strtolower(trim(getRoleType($usuario["role"]) ?? ''));
-
-                switch ($roleType) {
-                    case 'admin':
-                    case 'administrador':
-                        header("Location: ../../views/admin/adminDashboard.php");
-                        break;
-
-                    case 'director':
-                        header("Location: ../../views/director/director.php");
-                        break;
-
-                    case 'alumno':
-                    case 'estudiante':
-                        header("Location: ../../views/alumno/alumno.php");
-                        break;
-
-                    case 'ponente':
-                    case 'docente':
-                    case 'profesor':
-                        header("Location: ../../views/ponente/ponente.php");
-                        break;
-
-                    default:
-                        // Fallback por ID si no se pudo consultar el roleType
-                        switch ((int)$usuario["role"]) {
-                            // Admin
-                            case 1:
-                                header("Location: ../../views/admin/adminDashboard.php");
-                                break;
-
-                            // Director
-                            case 2:
-                                header("Location: ../../views/director/director.php");
-                                break;
-
-                            // Alumno
-                            case 3:
-                                header("Location: ../../views/alumno/alumno.php");
-                                break;
-
-                            // Ponente
-                            case 4:
-                                header("Location: ../../views/ponente/ponente.php");
-                                break;
-
-                            default:
-                                $_SESSION['error_login'] = "Rol de usuario no asignado o inválido.";
-                                header("Location: ../../../index.php");
-                                break;
-                        }
-                        break;
-                }
-
-                exit;
-
-            } else {
-                $_SESSION['error_login'] = "Correo o contraseña incorrectos";
+            if (!$estaVerificado) {
+                $_SESSION['error_login'] = "Debes confirmar tu correo antes de iniciar sesión.";
                 header("Location: ../../../index.php");
                 exit;
             }
 
-        } catch (Exception $e) {
-            $_SESSION['error_login'] = "Error al iniciar sesión: " . $e->getMessage();
+            $_SESSION['user_id'] = $usuario['id'];
+            $_SESSION['name'] = $usuario['name'];
+            $_SESSION['lastname'] = $usuario['lastname'] ?? '';
+            $_SESSION['email'] = $usuario['email'];
+            $_SESSION['role_id'] = (int)$usuario['role'];
+
+            include_once __DIR__ . "/../role/getRoleType.php";
+            $roleType = strtolower(trim(getRoleType($usuario["role"]) ?? ''));
+
+            switch ($roleType) {
+                case 'admin':
+                    header("Location: ../../views/admin/adminDashboard.php");
+                    break;
+
+                case 'director':
+                    header("Location: ../../views/director/director.php");
+                    break;
+
+                case 'teacher':
+                    header("Location: ../../views/ponente/ponente.php");
+                    break;
+
+                case 'student':
+                    header("Location: ../../views/alumno/alumno.php");
+                    break;
+
+                default:
+                    header("Location: ../../views/general/403.php");
+                    break;
+            }
+            exit;
+
+        } else {
+            $_SESSION['error_login'] = "Correo o contraseña incorrectos";
             header("Location: ../../../index.php");
             exit;
         }
-    } else {
+
+    } catch (\Throwable $e) {
+        $_SESSION['error_login'] = "Error al iniciar sesión: " . $e->getMessage();
         header("Location: ../../../index.php");
         exit;
     }
-?>
+} else {
+    header("Location: ../../../index.php");
+    exit;
+}

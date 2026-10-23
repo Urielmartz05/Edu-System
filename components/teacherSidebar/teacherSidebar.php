@@ -29,7 +29,7 @@
         <ul>
             <li class="dashboard-option">
                 <a href="/src/views/ponente/ponente.php" class="sidebar-link">
-                    <div class="option <?php echo ($currentPage == 'ponente.php' || $currentPage == 'ponenteDashboard.php') ? 'active' : ''; ?>">
+                    <div class="option <?php echo ($currentPage == 'ponente.php') ? 'active' : ''; ?>">
                         <img src="/resources/images/Home.png" alt="Dashboard" class="icon">
                         <p>Dashboard</p>
                     </div>
@@ -37,7 +37,7 @@
             </li>
             <li class="courses-option">
                 <a href="/src/views/ponente/ponenteCourses.php" class="sidebar-link">
-                    <div class="option <?php echo ($currentPage == 'ponenteCourses.php' || $currentPage == 'myCourses.php') ? 'active' : ''; ?>">
+                    <div class="option <?php echo ($currentPage == 'ponenteCourses.php') ? 'active' : ''; ?>">
                         <img src="/resources/images/Lesson.png" alt="My courses" class="icon">
                         <p>My courses</p>
                     </div>

@@ -29,7 +29,7 @@
         <ul>
             <li class="dashboard-option">
                 <a href="/src/views/alumno/alumno.php" class="sidebar-link">
-                    <div class="option <?php echo ($currentPage == 'alumno.php' || $currentPage == 'alumnoDashboard.php') ? 'active' : ''; ?>">
+                    <div class="option <?php echo ($currentPage == 'alumno.php') ? 'active' : ''; ?>">
                         <img src="/resources/images/Home.png" alt="Dashboard" class="icon">
                         <p>Dashboard</p>
                     </div>
@@ -37,7 +37,7 @@
             </li>
             <li class="courses-option">
                 <a href="/src/views/alumno/alumnoCourses.php" class="sidebar-link">
-                    <div class="option <?php echo ($currentPage == 'alumnoCourses.php' || $currentPage == 'myCourses.php') ? 'active' : ''; ?>">
+                    <div class="option <?php echo ($currentPage == 'alumnoCourses.php') ? 'active' : ''; ?>">
                         <img src="/resources/images/Lesson.png" alt="My courses" class="icon">
                         <p>My courses</p>
                     </div>
@@ -45,7 +45,7 @@
             </li>
             <li class="stats-option">
                 <a href="/src/views/alumno/alumnoStats.php" class="sidebar-link">
-                    <div class="option <?php echo ($currentPage == 'alumnoStats.php' || $currentPage == 'alumnoStatistics.php') ? 'active' : ''; ?>">
+                    <div class="option <?php echo ($currentPage == 'alumnoStats.php') ? 'active' : ''; ?>">
                         <img src="/resources/images/Stats.png" alt="Stats" class="icon">
                         <p>Stats</p>
                     </div>

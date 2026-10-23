@@ -1,5 +1,5 @@
 <?php
-    include_once "../../config/connection.php";
+    include_once __DIR__ . "/../../config/connection.php";
     $conexion = createConnection();
 
     $token = trim($_GET["token"] ?? "");
@@ -23,7 +23,7 @@
 </head>
 <body>
  
-    <?php include_once('../../../ui/header/header.php') ?>
+    <?php include_once __DIR__ . '/../../../ui/header/header.php'; ?>
 
     <main>
         <div class="verify-card">
@@ -31,7 +31,7 @@
                 if ($resultado && $resultado->num_rows === 1) {
                     $usuario = $resultado->fetch_assoc();
                     $sql = "UPDATE users 
-                            SET email_verificado = 1,
+                            SET verified = 1,
                             token_verificacion = NULL
                             WHERE id = ?";
                     

@@ -1,5 +1,5 @@
 <?php
-    include_once "../../config/connection.php";
+    include_once __DIR__ . "/../../config/connection.php";
     $conexion = createConnection();
 
     $mensaje = "";
@@ -17,7 +17,7 @@
         $tokenConfirmacion = bin2hex(random_bytes(16));
 
         $sql = "INSERT INTO users 
-            (id, name, lastname, email, password, role, token_verificacion, email_verificado) VALUES 
+            (id, name, lastname, email, password, role, token_verificacion, verified) VALUES 
             (?,?,?,?,?,?,?,0)";
 
         try {
@@ -46,17 +46,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Registro de alumno</title>
+    <title>Registro de usuario</title>
     <link rel="stylesheet" href="signup.css">
 </head>
 <body>
 
-    <?php include_once('../../../ui/header/header.php') ?>
+    <?php include_once __DIR__ . '/../../../ui/header/header.php'; ?>
     
     <main class="registro-main">
         <div class="registro-main-container">
             <div class="registro-columna-izquierda">
-                <h1 class="registro-title">Registro de alumno</h1>
+                <h1 class="registro-title">Registro de usuario</h1>
                 <form class="registro-form" method="POST">
                     <label>Numero de control:</label>
                     <input type="number" name="id" placeholder="Número de control" required>
@@ -73,9 +73,9 @@
                     <label>Rol:</label>
                     <select name="role" required>
                         <option value="">Selecciona un rol</option>
-                        <option value="3">Alumno</option>
+                        <option value="4">Student (Alumno)</option>
+                        <option value="3">Docente / Ponente</option>
                         <option value="2">Director</option>
-                        <option value="4">Ponente</option>
                     </select>
 
                     <label>Password:</label>

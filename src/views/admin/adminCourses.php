@@ -27,7 +27,7 @@ $user = getLoggedUser();
                             <p class="subtitle">Organiza la oferta académica y da seguimiento a cada curso.</p>
                         </div>
                         <div class="actions">
-                            <button class="btn" type="button" disabled title="Exportación pendiente de conectar al backend">Exportar CSV</button>
+                            <button class="btn" type="button">Exportar CSV</button>
                         </div>
                     </section>
                     <section class="kpi-grid">
@@ -59,11 +59,11 @@ $user = getLoggedUser();
                         <div class="filters">
                             <label class="search">
                                 <span class="filter-label">Buscar por curso, ponente o código</span>
-                                <input class="field" id="search" disabled title="Búsqueda pendiente de conectar al backend" type="search" placeholder="Buscar por curso, ponente o código…">
+                                <input class="field" id="search" type="search" placeholder="Buscar por curso, ponente o código…">
                             </label>
                             <label>
                                 <span class="filter-label">Área académica</span>
-                                <select id="category" disabled title="Filtros pendientes de conectar al backend">
+                                <select id="category">
                                     <option value="">Todas las áreas</option>
                                     <option>Ciencias exactas</option>
                                     <option>Tecnología</option>
@@ -72,7 +72,7 @@ $user = getLoggedUser();
                             </label>
                             <label>
                                 <span class="filter-label">Estado</span>
-                                <select id="status" disabled title="Filtros pendientes de conectar al backend">
+                                <select id="status">
                                     <option value="">Todos los estados</option>
                                     <option>Publicado</option>
                                     <option>En revisión</option>

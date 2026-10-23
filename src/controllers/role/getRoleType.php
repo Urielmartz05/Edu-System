@@ -3,9 +3,6 @@
     function getRoleType($role_id) {
         include_once __DIR__ . "/../../config/connection.php";
     
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
         try {
             $connection = createConnection();
 
@@ -18,9 +15,10 @@
             $result = $stmt->get_result();
             $roleType = $result->fetch_assoc();
 
-            return $roleType['roleType'];
+            return $roleType['roleType'] ?? null;
         } catch (\Throwable $th) {
-            echo "Error: " . $th->getMessage();
+            error_log("Error in getRoleType: " . $th->getMessage());
+            return null;
         }
 
         

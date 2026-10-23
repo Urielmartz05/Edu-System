@@ -29,12 +29,12 @@ $user = getLoggedUser();
                         <div class="actions">
                             <label>
                                 <span class="filter-label">Periodo del informe</span>
-                                <select id="period" disabled title="Periodo de muestra">
+                                <select id="period">
                                     <option value="actual" selected>Periodo actual · Ago–Dic 2026</option>
                                     <option value="anterior" >Periodo anterior · Ene–Jun 2026</option>
                                 </select>
                             </label>
-                            <button class="btn" type="button" disabled title="Exportación pendiente de conectar al backend">Exportar informe</button>
+                            <button class="btn" type="button">Exportar informe</button>
                         </div>
                     </section>
                     <section class="kpi-grid">
