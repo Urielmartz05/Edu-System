@@ -30,7 +30,15 @@ if ($enrollment !== null && $enrollment['course_id'] !== null) {
 }
 ```
 
-Los listados de materias exponen únicamente `id`, `course_id` y `teacher_id`, las columnas verificables en los modelos admin y la documentación. Los nombres de materias y docentes, horarios, calificaciones, asistencia, créditos y entregas no se consultan porque falta confirmar su esquema. El progreso devuelto pertenece a `course`, no representa una calificación individual. Los valores `NULL` del progreso se conservan.
+La imagen del esquema proporcionada confirma estas columnas:
+
+| Tabla | Columnas utilizadas |
+| --- | --- |
+| `student` | `id`, `course_id` (no nulo) |
+| `course` | `id`, `course_name`, `department_id`, `progress` (`decimal(4,1)`), `status` (`boolean`) |
+| `subject` | `id`, `course_id`, `subject_name` (`varchar(60)`), `teacher_id` (no nulo) |
+
+Los listados de materias devuelven `id`, `course_id`, `subject_name` y `teacher_id`. Se conservan los nombres nulos porque `subject_name` no se declara obligatorio en el esquema. Los nombres de docentes requieren relacionar los datos con `users`; esa parte se deja pendiente, conforme al alcance sin joins. Horarios, calificaciones, asistencia, créditos y entregas no aparecen en esta parte del esquema y no se consultan. El progreso devuelto pertenece a `course`, no representa una calificación individual. Los valores `NULL` del progreso se conservan.
 
 ## Pruebas de lectura
 
@@ -44,6 +52,6 @@ php tests/studentModelsTest.php
 
 También se admiten `STUDENT_TEST_DB_HOST`, `STUDENT_TEST_DB_PORT` y `STUDENT_TEST_DB_PASSWORD` para una instancia de pruebas propia.
 
-Las pruebas ejecutan los modelos con consultas preparadas reales en MariaDB. La conexión de prueba reemplaza cada tabla por una relación derivada definida con `SELECT ... UNION ALL SELECT ...`, sin crear tablas, insertar registros ni alterar la base. Verifican 44 lecturas: separación por alumno/curso, orden de materias, docentes distintos, progreso cero y nulo, registros inexistentes y tablas vacías. Rechazan SQL recibido como identificador y consultas que no sean `SELECT` o que contengan joins.
+Las pruebas ejecutan los modelos con consultas preparadas reales en MariaDB. La conexión de prueba reemplaza cada tabla por una relación derivada definida con `SELECT ... UNION ALL SELECT ...`, sin crear tablas, insertar registros ni alterar la base. Verifican 44 lecturas: separación por alumno/curso, orden y nombres de materias (incluidos acentos y nombres nulos), docentes distintos, progreso cero y nulo, registros inexistentes y tablas vacías. Rechazan SQL recibido como identificador y consultas que no sean `SELECT` o que contengan joins.
 
-**Límite de validación:** la base local solo tiene `users` y `role`; no contiene `student`, `course` ni `subject`. Por eso estas pruebas verifican el SQL y los resultados con datos controlados, no la compatibilidad con el esquema académico real. Ese contraste queda pendiente de disponer del esquema o de una conexión de lectura a esas tablas. No se modifican las vistas ni los modelos de admin.
+**Límite de validación:** la base local solo tiene `users` y `role`; no contiene `student`, `course` ni `subject`. Por eso estas pruebas verifican el SQL y los resultados con datos controlados. Las columnas utilizadas se contrastaron visualmente con la imagen del esquema proporcionada; queda pendiente ejecutar las consultas directamente sobre las tablas académicas reales. No se modifican las vistas ni los modelos de admin.

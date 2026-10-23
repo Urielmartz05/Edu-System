@@ -54,7 +54,7 @@
         public function getSubjects(int $courseId) {
 
             $connection = $this->connection;
-            $sql = "SELECT id, course_id, teacher_id FROM subject WHERE course_id = ? ORDER BY id ASC";
+            $sql = "SELECT id, course_id, subject_name, teacher_id FROM subject WHERE course_id = ? ORDER BY id ASC";
 
             $stmt = $connection->prepare($sql);
             $stmt->bind_param("i", $courseId);

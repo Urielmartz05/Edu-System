@@ -15,7 +15,7 @@ final class StudentReadFixtureConnection {
         $this->tables = [
             'student' => 'SELECT 7 AS id, 1 AS course_id UNION ALL SELECT 8, 1 UNION ALL SELECT 12, 2',
             'course' => "SELECT 1 AS id, 'Desarrollo Web' AS course_name, 1 AS department_id, 75.0 AS progress, 1 AS status UNION ALL SELECT 2, 'Algoritmos', 2, 0.0, 0 UNION ALL SELECT 3, 'Sin materias', 1, NULL, 1",
-            'subject' => 'SELECT 9 AS id, 1 AS course_id, 3 AS teacher_id UNION ALL SELECT 2, 1, 4 UNION ALL SELECT 5, 1, 3 UNION ALL SELECT 6, 2, 10 UNION ALL SELECT 8, 3, NULL',
+            'subject' => "SELECT 9 AS id, 1 AS course_id, NULL AS subject_name, 3 AS teacher_id UNION ALL SELECT 2, 1, 'Programación Backend', 4 UNION ALL SELECT 5, 1, 'Diseño Web', 3 UNION ALL SELECT 6, 2, 'Algoritmos', 10",
         ];
         if ($empty) {
             foreach ($this->tables as $table => $sql) {
@@ -76,7 +76,10 @@ foreach ($models as $model) {
 }
 [$dashboard, $courses, $statistics] = $models;
 foreach ([$dashboard, $courses] as $model) {
-    expectSame([2, 5, 9], array_map('intval', array_column($model->getSubjects(1), 'id')), 'Materias ordenadas y del curso solicitado');
+    $subjects = $model->getSubjects(1);
+    expectSame([2, 5, 9], array_map('intval', array_column($subjects, 'id')), 'Materias ordenadas y del curso solicitado');
+    expectSame(['Programación Backend', 'Diseño Web', null], array_column($subjects, 'subject_name'), 'Nombres de materias, acentos y nombre nulo permitidos por el esquema');
+    expectSame([4, 3, 3], array_map('intval', array_column($subjects, 'teacher_id')), 'Identificadores de docentes conservados sin JOIN');
     expectSame([6], array_map('intval', array_column($model->getSubjects(2), 'id')), 'No mezcla materias de otro curso');
     expectSame([], $model->getSubjects(999), 'Lista sin resultados');
 }
@@ -97,7 +100,7 @@ expectSame(null, $statistics->getCourseProgress(3)['progress'], 'Progreso descon
 expectSame(null, $statistics->getCourseProgress(999), 'Estadísticas inexistentes');
 expectSame(2, $statistics->getTeachersCount(1), 'Docentes distintos, sin duplicarlos por materia');
 expectSame(1, $statistics->getTeachersCount(2), 'Docente del segundo curso');
-expectSame(0, $statistics->getTeachersCount(3), 'No cuenta docente NULL');
+expectSame(0, $statistics->getTeachersCount(3), 'Curso sin materias no tiene docentes');
 expectSame(0, $statistics->getTeachersCount(999), 'Sin docentes');
 
 $empty = new StudentReadFixtureConnection($connection, true);
