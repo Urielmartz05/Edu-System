@@ -16,8 +16,8 @@
                 <img src="/resources/images/userIcon.svg" alt="User Icon" class="user-icon">
             </div>
             <div class="user-details">
-                <p><?php echo $_SESSION['name']; ?> <?php echo $_SESSION['lastname']; ?></p>
-                <p><?php echo $_SESSION['email']; ?></p>
+                <p><?php echo htmlspecialchars(($_SESSION['name'] ?? 'Admin') . ' ' . ($_SESSION['lastname'] ?? '')); ?></p>
+                <p><?php echo htmlspecialchars($_SESSION['email'] ?? 'admin@edu-system.com'); ?></p>
             </div>
         </div>
     </div>
@@ -30,6 +30,14 @@
                     <div class="option <?php echo ($currentPage == 'adminDashboard.php') ? 'active' : ''; ?>">
                         <img src="/resources/images/Home.png" alt="Dashboard" class="icon">
                         <p>Dashboard</p>
+                    </div>
+                </a>
+            </li>
+            <li class="create-option">
+                <a href="/src/views/admin/adminCreate.php" class="sidebar-link">
+                    <div class="option <?php echo ($currentPage == 'adminCreate.php') ? 'active' : ''; ?>">
+                        <img src="/resources/images/Create.svg" alt="Creation Hub" class="icon">
+                        <p>Creation Hub</p>
                     </div>
                 </a>
             </li>

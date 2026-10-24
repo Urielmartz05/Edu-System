@@ -1,8 +1,10 @@
 <?php
-    
+
+    // Resolve system role type string from role identifier
     function getRoleType($role_id) {
+
         include_once __DIR__ . "/../../config/connection.php";
-    
+
         try {
             $connection = createConnection();
 
@@ -11,9 +13,10 @@
             $stmt = $connection->prepare($sql);
             $stmt->bind_param("i", $role_id);
             $stmt->execute();
-        
+
             $result = $stmt->get_result();
             $roleType = $result->fetch_assoc();
+            $stmt->close();
 
             return $roleType['roleType'] ?? null;
         } catch (\Throwable $th) {
@@ -21,7 +24,6 @@
             return null;
         }
 
-        
     }
 
 ?>

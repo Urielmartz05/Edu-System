@@ -10,37 +10,35 @@
     }
 ?>
 
-
 <link rel="stylesheet" href="/ui/header/header.css">
 
-<header>
+<header class="main-header">
     <nav>
         <div class="logo">
-            <p class="school-name"></p>
+            <a href="/index.php" class="school-brand" title="Edu-System Academic Portal">
+                <span class="school-brand-title">Edu-System</span>
+                <span class="school-brand-pill">PORTAL</span>
+            </a>
         </div>
 
         <div class="more-info">
-
         <?php 
             if (isset($_SESSION['user_id'])) {
                 echo "<div class='user-session'>
-                        <p class='user'>" . htmlspecialchars(ucfirst(strtolower($roleType ?: 'Usuario'))) . "</p>
-                        <a href='/src/controllers/logout/logout.php' class='logout-link'>Log out</a>
+                        <span class='user-role-badge'>" . htmlspecialchars(ucfirst(strtolower($roleType ?: 'User'))) . "</span>
+                        <a href='/src/controllers/logout/logout.php' class='logout-link' title='Sign out of your session'>Log out</a>
                       </div>";
-            }
-
-            else {
-                echo '<ul>
+            } else {
+                echo '<ul class="header-auth-nav">
                         <li>
-                            <a href="/index.php">Log in</a>
+                            <a href="/index.php" class="header-nav-link">Log in</a>
                         </li>
                         <li>
-                            <a href="/src/views/signup/signup.php">Sign up</a>
+                            <a href="/src/views/signup/signup.php" class="header-signup-btn">Sign up</a>
                         </li>
                     </ul>'; 
             }
         ?>
         </div>
     </nav>
-
 </header>

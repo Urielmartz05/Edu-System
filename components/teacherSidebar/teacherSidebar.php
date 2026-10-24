@@ -6,8 +6,8 @@
     }
 
     $currentPage = basename($_SERVER['PHP_SELF']);
-    $userName = htmlspecialchars(($_SESSION['name'] ?? 'Docente') . ' ' . ($_SESSION['lastname'] ?? ''));
-    $userEmail = htmlspecialchars($_SESSION['email'] ?? 'docente@edu-system.com');
+    $userName = htmlspecialchars(($_SESSION['name'] ?? 'Faculty') . ' ' . ($_SESSION['lastname'] ?? ''));
+    $userEmail = htmlspecialchars($_SESSION['email'] ?? 'instructor@edu-system.com');
 ?>
 
 <aside>
@@ -37,7 +37,7 @@
             </li>
             <li class="courses-option">
                 <a href="/src/views/ponente/ponenteCourses.php" class="sidebar-link">
-                    <div class="option <?php echo ($currentPage == 'ponenteCourses.php') ? 'active' : ''; ?>">
+                    <div class="option <?php echo in_array($currentPage, ['ponenteCourses.php', 'ponenteCourseContent.php']) ? 'active' : ''; ?>">
                         <img src="/resources/images/Lesson.png" alt="My courses" class="icon">
                         <p>My courses</p>
                     </div>

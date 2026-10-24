@@ -38,35 +38,41 @@ main {
     justify-content: space-between;
     align-items: flex-start;
     gap: 20px;
-    margin-bottom: 24px;
+    margin-bottom: 28px;
+    background-color: #111418;
+    padding: 26px 32px;
+    border-radius: 16px;
+    box-shadow: 0 8px 24px rgba(17, 20, 24, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .eyebrow {
     font-size: 11px;
     font-weight: 700;
-    color: #8B1528;
-    letter-spacing: 1px;
+    color: #93c5fd;
+    letter-spacing: 0.1em;
     text-transform: uppercase;
-    margin-bottom: 4px;
+    margin-bottom: 6px;
+    display: inline-block;
 }
 
 .page-heading h1 {
-    font-size: 28px;
+    font-size: 26px;
     font-weight: 700;
-    color: #0f172a;
-    line-height: 1.2;
+    color: #ffffff;
+    line-height: 1.25;
 }
 
 .subtitle {
-    font-size: 14px;
-    color: #64748b;
+    font-size: 13.5px;
+    color: #cbd5e1;
     margin-top: 6px;
 }
 
 .btn-primary {
-    background-color: #8B1528;
+    background-color: #111418;
     color: #ffffff;
-    border: none;
+    border: 1px solid #111418;
     border-radius: 8px;
     padding: 10px 20px;
     font-size: 13px;
@@ -76,11 +82,12 @@ main {
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    transition: background-color 0.2s ease, transform 0.2s ease;
+    transition: background-color 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
 }
 
 .btn-primary:hover {
-    background-color: #6d0f1e;
+    background-color: #1e293b;
+    border-color: #1e293b;
     transform: translateY(-1px);
 }
 
@@ -178,7 +185,7 @@ main {
 }
 
 .search-input:focus {
-    border-color: #8B1528;
+    border-color: #2563eb;
 }
 
 .filter-select {
@@ -191,12 +198,238 @@ main {
     outline: none;
 }
 
-/* Tabla de Cursos */
+/* Cards Grid de Cursos (Estilo Student) */
+.courses-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 24px;
+    padding: 24px;
+}
+
+.course-card {
+    background: #ffffff;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+}
+
+.course-card::before {
+    display: none;
+}
+
+.course-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.06);
+    border-color: #94a3b8;
+}
+
+.card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+}
+
+.badge-dept {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    color: #475569;
+    padding: 4px 10px;
+    border-radius: 6px;
+}
+
+.badge-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    background: #ecfdf5;
+    color: #047857;
+    border: 1px solid #a7f3d0;
+    padding: 3px 10px;
+    border-radius: 20px;
+}
+
+.badge-status.pending {
+    background: #fffbeb;
+    color: #d97706;
+    border-color: #fde68a;
+}
+
+.status-dot {
+    width: 6px;
+    height: 6px;
+    background-color: #10b981;
+    border-radius: 50%;
+}
+
+.badge-status.pending .status-dot {
+    background-color: #f59e0b;
+}
+
+.course-title {
+    font-size: 17.5px;
+    font-weight: 700;
+    color: #0f172a;
+    line-height: 1.4;
+    min-height: 50px;
+    letter-spacing: -0.01em;
+}
+
+/* Progreso */
+.progress-container {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    background: #f8fafc;
+    padding: 12px 14px;
+    border-radius: 10px;
+    border: 1px solid #f1f5f9;
+}
+
+.progress-labels {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    color: #64748b;
+}
+
+.progress-labels strong {
+    color: #0f172a;
+    font-weight: 700;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 7px;
+    background: #e2e8f0;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #2563eb, #3b82f6);
+    border-radius: 10px;
+    transition: width 0.4s ease;
+}
+
+/* Metadatos */
+.card-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    font-size: 12.5px;
+    color: #64748b;
+    padding: 4px 0;
+}
+
+.meta-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.meta-item svg {
+    stroke: #64748b;
+    flex-shrink: 0;
+}
+
+/* Pie de Tarjeta */
+.card-footer {
+    margin-top: auto;
+    padding-top: 8px;
+    border-top: 1px solid #f1f5f9;
+}
+
+.btn-enter-course {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    background: #f8fafc;
+    color: #0f172a;
+    border: 1px solid #e2e8f0;
+    font-weight: 600;
+    font-size: 13.5px;
+    padding: 10px 16px;
+    border-radius: 10px;
+    transition: all 0.2s ease;
+}
+
+.course-card:hover .btn-enter-course {
+    background: #111418;
+    color: #ffffff;
+    border-color: #111418;
+    box-shadow: 0 4px 12px rgba(17, 20, 24, 0.15);
+}
+
+.btn-enter-course .arrow-icon {
+    stroke: currentColor;
+    transition: transform 0.2s ease;
+}
+
+.course-card:hover .btn-enter-course .arrow-icon {
+    transform: translateX(4px);
+}
+
+/* Estado Vacío */
+.empty-state {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 56px 32px;
+    text-align: center;
+    border: 1px dashed #cbd5e1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    grid-column: 1 / -1;
+    width: 100%;
+}
+
+.empty-icon-wrap {
+    width: 68px;
+    height: 68px;
+    border-radius: 50%;
+    background: #f1f5f9;
+    color: #64748b;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 4px;
+}
+
+.empty-state h3 {
+    font-size: 18px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.empty-state p {
+    font-size: 13.5px;
+    color: #64748b;
+    max-width: 440px;
+}
+
+/* Tabla de Cursos (Fallback) */
 .table-wrap {
     width: 100%;
     max-width: 100%;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
+    overflow-x: hidden;
     display: block;
 }
 
@@ -204,7 +437,7 @@ table {
     width: 100%;
     border-collapse: collapse;
     text-align: left;
-    white-space: nowrap;
+    table-layout: auto;
 }
 
 th {
@@ -235,9 +468,9 @@ tbody tr:hover {
 
 .course-code {
     font-weight: 700;
-    color: #8B1528;
+    color: #0f172a;
     font-size: 12px;
-    background-color: #fdf2f4;
+    background-color: #f1f5f9;
     padding: 4px 8px;
     border-radius: 6px;
     display: inline-block;
@@ -256,6 +489,55 @@ tbody tr:hover {
     margin-top: 2px;
 }
 
+.badge, .pill-status {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 116px;
+    height: 32px;
+    padding: 0 16px;
+    border-radius: 9999px;
+    font-size: 12px;
+    font-weight: 600;
+    text-align: center;
+    pointer-events: none;
+    user-select: none;
+}
+
+.badge.active {
+    background-color: #f0fdf4;
+    color: #16a34a;
+    border: 1px solid #bbf7d0;
+}
+
+.badge.pending {
+    background-color: #fffbeb;
+    color: #d97706;
+    border: 1px solid #fde68a;
+}
+
+.btn-table-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    background-color: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    color: #0f172a;
+    font-size: 12.5px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: background-color 0.15s, border-color 0.15s;
+    white-space: nowrap;
+}
+
+.btn-table-action:hover {
+    background-color: #f1f5f9;
+    border-color: #cbd5e1;
+    color: #0f172a;
+}
+
 .pill {
     display: inline-flex;
     align-items: center;
@@ -264,6 +546,7 @@ tbody tr:hover {
     font-size: 11px;
     font-weight: 600;
     white-space: nowrap;
+    pointer-events: none;
 }
 
 .pill.green {
@@ -272,8 +555,8 @@ tbody tr:hover {
 }
 
 .pill.wine {
-    background-color: #fdf2f4;
-    color: #8B1528;
+    background-color: #f1f5f9;
+    color: #475569;
 }
 
 .pill.amber {
@@ -284,18 +567,20 @@ tbody tr:hover {
 .btn-action {
     display: inline-block;
     padding: 6px 14px;
-    background-color: #f1f5f9;
-    color: #1e293b;
+    background-color: #f8fafc;
+    color: #0f172a;
+    border: 1px solid #cbd5e1;
     border-radius: 6px;
     font-size: 12px;
     font-weight: 600;
     text-decoration: none;
-    transition: background-color 0.2s ease, color 0.2s ease;
+    transition: background-color 0.15s, border-color 0.15s;
 }
 
 .btn-action:hover {
-    background-color: #8B1528;
-    color: #ffffff;
+    background-color: #f1f5f9;
+    border-color: #94a3b8;
+    color: #0f172a;
 }
 
 @media (max-width: 1024px) {

@@ -14,11 +14,11 @@
     }
 ?>
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Verificar Email</title>
+    <title>Verify Email · Edu-System</title>
     <link rel="stylesheet" href="verificar.css">
 </head>
 <body>
@@ -39,14 +39,16 @@
                     $stmt->bind_param("i", $usuario["id"]);
                     $stmt->execute();
 
-                    echo "<h1>Email confirmado</h1>";
-                    echo "<a href='../../../index.php' class='verify-link'>Iniciar Sesión</a>";
+                    echo "<h1>Email Confirmed</h1>";
+                    echo "<p style='color:#64748b; margin:10px 0 20px;'>Your account has been activated successfully.</p>";
+                    echo "<a href='../../../index.php' class='verify-link'>Sign In to Your Account</a>";
                     
                 } else {
 
                     echo "<div class='error-box'>";
-                    echo "<h1>Token inválido o expirado</h1>";
-                    echo "<a href='../../../index.php'>Volver al inicio</a>";
+                    echo "<h1>Invalid or Expired Token</h1>";
+                    echo "<p style='color:#64748b; margin:10px 0 20px;'>This verification link is invalid or has already been used.</p>";
+                    echo "<a href='../../../index.php'>Return to Home</a>";
                     echo "</div>";
                 }
             ?>
@@ -54,4 +56,4 @@
     </main>
 
 </body>
-</html> 
+</html>

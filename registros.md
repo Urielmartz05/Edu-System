@@ -71,14 +71,14 @@ Documento de referencia con los registros actuales de la base de datos (a excepc
 ---
 
 ## 7. Tabla `course` (Cursos / Grupos)
-| ID | Nombre del Curso | Departamento (`department_id`) | Progreso | Estado (`status`) |
-|:--:|:-----------------|:-------------------------------|:--------:|:-----------------:|
-| 1  | Desarrollo Web Full Stack | 1 (Ingeniería de Software) | 75.0% | 1 (Activo) |
-| 2  | Estructuras de Datos y Algoritmos | 1 (Ingeniería de Software) | 82.5% | 1 (Activo) |
-| 3  | Bases de Datos Avanzadas | 2 (Ciencias Computacionales) | 54.0% | 1 (Activo) |
-| 4  | Machine Learning y Deep Learning | 3 (Inteligencia Artificial) | 40.0% | 1 (Activo) |
-| 5  | Ciberseguridad y Pentesting | 4 (Ciberseguridad y Redes) | 65.0% | 1 (Activo) |
-| 6  | Arquitectura Cloud & DevOps | 1 (Ingeniería de Software) | 30.0% | 1 (Activo) |
+| ID | Nombre del Curso | Departamento (`department_id`) | Progreso | Estado (`status`) | Créditos (`credits`) |
+|:--:|:-----------------|:-------------------------------|:--------:|:-----------------:|:--------------------:|
+| 1  | Desarrollo Web Full Stack | 1 (Ingeniería de Software) | 75.0% | 1 (Activo) | 8 |
+| 2  | Estructuras de Datos y Algoritmos | 1 (Ingeniería de Software) | 82.5% | 1 (Activo) | 6 |
+| 3  | Bases de Datos Avanzadas | 2 (Ciencias Computacionales) | 54.0% | 1 (Activo) | 6 |
+| 4  | Machine Learning y Deep Learning | 3 (Inteligencia Artificial) | 40.0% | 1 (Activo) | 8 |
+| 5  | Ciberseguridad y Pentesting | 4 (Ciberseguridad y Redes) | 65.0% | 1 (Activo) | 7 |
+| 6  | Arquitectura Cloud & DevOps | 1 (Ingeniería de Software) | 30.0% | 1 (Activo) | 6 |
 
 ---
 

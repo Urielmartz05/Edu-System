@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Acceso no autorizado (403) · Edu-System</title>
+    <title>Access Denied (403) · Edu-System</title>
     <link rel="stylesheet" href="/style.css">
     <style>
         .error-container {
@@ -45,7 +45,7 @@
         }
         .btn-home {
             display: inline-block;
-            background: #2563eb;
+            background: #8B1528;
             color: #ffffff;
             text-decoration: none;
             padding: 0.75rem 1.5rem;
@@ -54,7 +54,7 @@
             transition: background 0.2s;
         }
         .btn-home:hover {
-            background: #1d4ed8;
+            background: #701020;
         }
     </style>
 </head>
@@ -62,9 +62,9 @@
     <div class="error-container">
         <div class="error-card">
             <h1 class="error-code">403</h1>
-            <h2 class="error-title">Acceso restringido</h2>
-            <p class="error-desc">No cuentas con los permisos o rol requerido para acceder a este apartado del sistema educativo.</p>
-            <a href="/index.php" class="btn-home">Volver al inicio</a>
+            <h2 class="error-title">Access Restricted</h2>
+            <p class="error-desc">You do not have the required role or permissions to access this division of Edu-System.</p>
+            <a href="/index.php" class="btn-home">Return to Home</a>
         </div>
     </div>
 </body>

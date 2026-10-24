@@ -4,7 +4,6 @@
     box-sizing: border-box;
 }
 
-
 aside {
     height: calc(100vh - 82px);
     width: 75px;
@@ -14,13 +13,10 @@ aside {
     left: 0;
     bottom: 0;
     z-index: 90;
-    
     display: flex;
     flex-direction: column;
     align-items: center;
-
     overflow: hidden;
-
     transition: width 0.3s ease;
 }
 
@@ -56,30 +52,37 @@ aside:hover {
 .user-details {
     display: flex;
     flex-direction: column;
+    overflow: hidden;
 }
 
 .user-details p {
-    font-size: 12px;
-}
-
-.user-icon {
-    width: 40px;
-    height: 40px;
-}
-
-.user-info p {
     white-space: nowrap;
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.2s ease;
-    color: #f1f5f9;
 }
 
-aside:hover .user-info p {
+.user-details p:first-child {
+    font-size: 13px;
+    font-weight: 600;
+    color: #ffffff;
+}
+
+.user-details p:last-child {
+    font-size: 11px;
+    color: #94a3b8;
+}
+
+.user-icon {
+    width: 36px;
+    height: 36px;
+}
+
+aside:hover .user-details p {
     opacity: 1;
     pointer-events: auto;
     transition-delay: 0.1s;
-} 
+}
 
 .options-container {
     width: 100%;
@@ -89,12 +92,13 @@ aside:hover .user-info p {
     align-items: center;
 }
 
-.options-container ul{
+.options-container ul {
     width: 100%;
     list-style-type: none;
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    gap: 4px;
 }
 
 .sidebar-link {
@@ -106,35 +110,81 @@ aside:hover .user-info p {
 
 .option p {
     color: #e2e8f0;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+    font-size: 14px;
+}
+
+aside:hover .option p {
+    opacity: 1;
+    pointer-events: auto;
+    transition-delay: 0.1s;
 }
 
 .option {
     width: 100%;
     display: flex;
     align-items: center;
-    gap: 15px;
-    padding: 15px 10px;
+    gap: 14px;
+    padding: 12px 10px;
     cursor: pointer;
+    border-radius: 12px;
+    transition: background-color 0.2s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s ease;
 }
 
 .option:hover {
-    background-color: #444444;
-    border-radius: 20px;
-    transition: background-color 0.2s ease, border-radius 0.2s ease;
+    background-color: rgba(255, 255, 255, 0.08);
 }
 
-.active {
-    background-color: #8B1528;
-    border-radius: 20px;
+.option:hover p {
+    color: #ffffff;
 }
 
-.active:hover {
+.option:hover .icon {
+    transform: scale(1.08);
+}
+
+aside .option.active {
     background-color: #8B1528;
-    border-radius: 20px;
+    border-radius: 12px;
+}
+
+aside .option.active:hover {
+    background-color: #9e1930;
 }
 
 .icon {
-    width: 40px;
-    height: 40px;
+    width: 34px;
+    height: 34px;
     filter: invert(1);
+    flex-shrink: 0;
+    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@media (max-width: 768px) {
+    aside {
+        width: 64px;
+    }
+    aside:hover {
+        width: 200px;
+    }
+}
+
+@media (max-width: 540px) {
+    aside {
+        width: 56px;
+    }
+    aside:hover {
+        width: 180px;
+    }
+    .icon {
+        width: 28px;
+        height: 28px;
+    }
+    .user-icon {
+        width: 30px;
+        height: 30px;
+    }
 }

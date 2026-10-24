@@ -1,6 +1,6 @@
 <?php
 // Ejecutar contra una instancia MySQL/MariaDB de pruebas. Solo se ejecutan SELECT.
-require_once __DIR__ . '/../src/models/studentModels/studentModels.php';
+require_once __DIR__ . '/../src/models/studentModels/studentDashboardModel.php';
 require_once __DIR__ . '/../src/models/studentModels/studentCoursesModel.php';
 require_once __DIR__ . '/../src/models/studentModels/studentStatisticsModel.php';
 

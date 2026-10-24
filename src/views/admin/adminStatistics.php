@@ -1,13 +1,22 @@
 <?php
-require_once __DIR__ . '/../../controllers/auth/check_auth.php';
-$user = getLoggedUser();
+    require_once __DIR__ . '/../../controllers/auth/check_auth.php';
+    require_once __DIR__ . '/../../models/adminModels/adminStatisticsModel.php';
+    $user = getLoggedUser();
+
+    $adminStats = new AdminStatistics();
+    $totalEnrollments = $adminStats->getTotalEnrollments();
+    $completionRate = $adminStats->getCompletionRate();
+    $avgProgress = $adminStats->getAverageCourseProgress();
+    $activeCourses = $adminStats->getActiveCoursesCount();
+    $distribution = $adminStats->getProgressDistribution();
+    $coursePerformance = $adminStats->getCoursePerformanceList();
 ?>
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Estadísticas · Edu-System</title>
+        <title>Statistics · Edu-System</title>
         <link rel="stylesheet" href="statistics.css">
     </head>
     <body>
@@ -16,132 +25,149 @@ $user = getLoggedUser();
 
         <div class="workspace">
             <main>
-                
-                <!-- Contenido de Estadísticas: edita aquí los textos, las tarjetas y las tablas. -->
                 <div id="page-content">
-                    <!-- Academic statistics presentation prepared for real backend data. -->
+                    <!-- Heading -->
                     <section class="page-heading">
                         <div>
-                            <p class="eyebrow">GESTIÓN ACADÉMICA</p>
-                            <h1>Estadísticas académicas</h1>
-                            <p class="subtitle">Información para acompañar el aprendizaje y tomar mejores decisiones.</p>
-                        </div>
-                        <div class="actions">
-                            <label>
-                                <span class="filter-label">Periodo del informe</span>
-                                <select id="period">
-                                    <option value="actual" selected>Periodo actual · Ago–Dic 2026</option>
-                                    <option value="anterior" >Periodo anterior · Ene–Jun 2026</option>
-                                </select>
-                            </label>
-                            <button class="btn" type="button">Exportar informe</button>
+                            <p class="eyebrow">ACADEMIC MANAGEMENT</p>
+                            <h1>Academic Statistics</h1>
+                            <p class="subtitle">Insights to support student learning, track completion milestones, and drive institutional decisions.</p>
                         </div>
                     </section>
+
+                    <!-- KPI Grid -->
                     <section class="kpi-grid">
                         <article class="kpi">
-                            <h2 class="kpi-label">Inscripciones</h2>
-                            <strong class="kpi-value"><!-- Dynamic value: total enrollments in report period --></strong>
+                            <h2 class="kpi-label">Total Enrollments</h2>
+                            <strong class="kpi-value"><?php echo $totalEnrollments; ?></strong>
                         </article>
                         <article class="kpi">
-                            <h2 class="kpi-label">Tasa de finalización</h2>
-                            <strong class="kpi-value"><!-- Dynamic value: course completion rate percentage --></strong>
+                            <h2 class="kpi-label">Completion Rate</h2>
+                            <strong class="kpi-value"><?php echo $completionRate; ?>%</strong>
                         </article>
                         <article class="kpi">
-                            <h2 class="kpi-label">Avance promedio</h2>
-                            <strong class="kpi-value"><!-- Dynamic value: average syllabus progress percentage --></strong>
+                            <h2 class="kpi-label">Average Progress</h2>
+                            <strong class="kpi-value"><?php echo $avgProgress; ?>%</strong>
                         </article>
                         <article class="kpi">
-                            <h2 class="kpi-label">Calificación promedio</h2>
-                            <strong class="kpi-value"><!-- Dynamic value: average student grade (e.g. X.X / 10) --></strong>
+                            <h2 class="kpi-label">Active Courses</h2>
+                            <strong class="kpi-value"><?php echo $activeCourses; ?></strong>
                         </article>
                     </section>
+
                     <div class="grid">
+                        <!-- Progress Distribution Panel -->
                         <section class="panel">
                             <div class="panel-head">
                                 <div>
-                                    <h2>Evolución del aprendizaje</h2>
-                                    <p>Inscripciones y finalizaciones por mes</p>
+                                    <h2>Syllabus Progress Breakdown</h2>
+                                    <p>Percentage of courses across completion tiers</p>
                                 </div>
-                                <span class="pill "><!-- Dynamic value: period label --></span>
-                            </div>
-                            <div class="chart">
-                                <div class="chart-legend">
-                                    <span>
-                                        <i class="legend-dot">
-                                        </i>Inscripciones</span>
-                                    <span>
-                                        <i class="legend-dot light">
-                                        </i>Finalizaciones</span>
-                                </div>
-                                <div class="bar-chart">
-                                    <!-- Dynamic bar-groups: iterate over monthly statistics -->
-                                    <!--
-                                    <div class="bar-group">
-                                        <div class="bar" style="height: [enrollments_percentage]%" title="[Month]: [count] inscripciones"></div>
-                                        <div class="bar light" style="height: [completions_percentage]%" title="[count] finalizaciones"></div>
-                                    </div>
-                                    -->
-                                </div>
-                                <div class="chart-labels">
-                                    <!-- Dynamic labels: iterate over month abbreviations (e.g. <span>Jul</span>) -->
-                                </div>
-                            </div>
-                            <p class="chart-foot"><!-- Dynamic summary note for monthly chart data --></p>
-                        </section>
-                        <section class="panel">
-                            <div class="panel-head">
-                                <div>
-                                    <h2>Distribución de resultados</h2>
-                                    <p>Alumnos por rango de calificación</p>
-                                </div>
+                                <span class="pill">Current Academic Cycle</span>
                             </div>
                             <div class="progress-list">
-                                <!-- Dynamic progress items: iterate over grade distribution tiers -->
-                                <!--
                                 <div>
                                     <div class="progress-title">
-                                        <span><!-- Grade range tier title --></span>
-                                        <strong><!-- Tier percentage --></strong>
+                                        <span>Advanced (&gt; 80% Completed)</span>
+                                        <strong><?php echo $distribution['high']; ?>% (<?php echo $distribution['counts']['high']; ?> courses)</strong>
                                     </div>
                                     <div class="progress-track">
-                                        <div class="progress-fill green" style="width:<!-- Tier percentage -->%"></div>
+                                        <div class="progress-fill" style="width:<?php echo $distribution['high']; ?>%; background:#10b981;"></div>
                                     </div>
-                                    <p class="list-note"><!-- Tier description note --></p>
                                 </div>
-                                -->
+                                <div>
+                                    <div class="progress-title">
+                                        <span>Intermediate (50% – 79%)</span>
+                                        <strong><?php echo $distribution['mid']; ?>% (<?php echo $distribution['counts']['mid']; ?> courses)</strong>
+                                    </div>
+                                    <div class="progress-track">
+                                        <div class="progress-fill" style="width:<?php echo $distribution['mid']; ?>%; background:#3b82f6;"></div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="progress-title">
+                                        <span>Beginning (1% – 49%)</span>
+                                        <strong><?php echo $distribution['low']; ?>% (<?php echo $distribution['counts']['low']; ?> courses)</strong>
+                                    </div>
+                                    <div class="progress-track">
+                                        <div class="progress-fill" style="width:<?php echo $distribution['low']; ?>%; background:#f59e0b;"></div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="progress-title">
+                                        <span>Not Started (0%)</span>
+                                        <strong><?php echo $distribution['none']; ?>% (<?php echo $distribution['counts']['none']; ?> courses)</strong>
+                                    </div>
+                                    <div class="progress-track">
+                                        <div class="progress-fill" style="width:<?php echo $distribution['none']; ?>%; background:#94a3b8;"></div>
+                                    </div>
+                                </div>
                             </div>
                         </section>
+
+                        <!-- Academic Guidance Insight -->
+                        <div class="insight">
+                            <span class="insight-badge">Advisory Notice</span>
+                            <h3>Academic Advisory Summary</h3>
+                            <p>
+                                Overall institutional learning pace is currently maintaining an average completion rate of <strong><?php echo $avgProgress; ?>%</strong>. Most courses have active syllabus progression. Ensure courses in the beginning tier receive scheduled faculty check-ins and module updates.
+                            </p>
+                        </div>
                     </div>
-                    <aside class="insight">
-                        <strong>Acompañamiento académico</strong>
-                        <p><!-- Dynamic recommendation or academic insight text --></p>
-                    </aside>
+
+                    <!-- Performance Table -->
                     <section class="panel">
                         <div class="panel-head">
                             <div>
-                                <h2>Rendimiento por curso</h2>
-                                <p>Avance, participación y capacidad de los cursos publicados</p>
+                                <h2>Course Performance Details</h2>
+                                <p>Syllabus completion, enrolled students, and module counts per course.</p>
                             </div>
                         </div>
                         <div class="table-wrap">
                             <table>
                                 <thead>
                                     <tr>
-                                        <th scope="col">CURSO</th>
-                                        <th scope="col">INSCRITOS</th>
-                                        <th scope="col">OCUPACIÓN</th>
-                                        <th scope="col">AVANCE PROMEDIO</th>
-                                        <th scope="col">SEGUIMIENTO</th>
+                                        <th scope="col" class="col-course">COURSE</th>
+                                        <th scope="col" class="col-students">ENROLLED STUDENTS</th>
+                                        <th scope="col" class="col-modules">SYLLABUS MODULES</th>
+                                        <th scope="col" class="col-progress">AVERAGE PROGRESS</th>
+                                        <th scope="col" class="col-status">STATUS</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <!-- Statistical breakdown records will be loaded dynamically here -->
+                                    <?php if (!empty($coursePerformance)): ?>
+                                        <?php foreach ($coursePerformance as $item): 
+                                            $prog = (float)($item['progress'] ?? 0);
+                                            $isPublished = ((int)$item['status'] === 1);
+                                        ?>
+                                            <tr>
+                                                <td class="col-course"><strong><?php echo htmlspecialchars($item['course_name']); ?></strong></td>
+                                                <td class="col-students"><?php echo (int)$item['enrolled_count']; ?> students</td>
+                                                <td class="col-modules"><?php echo (int)$item['block_count']; ?> modules</td>
+                                                <td class="col-progress">
+                                                    <div style="display:flex; align-items:center; gap:10px;">
+                                                        <span style="font-weight:600; min-width:45px;"><?php echo $prog; ?>%</span>
+                                                        <div style="flex:1; background:#e2e8f0; border-radius:6px; height:8px; overflow:hidden; min-width:80px;">
+                                                            <div style="width:<?php echo min(100, max(0, $prog)); ?>%; background:#10b981; height:100%;"></div>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td class="col-status">
+                                                    <span class="badge <?php echo $isPublished ? 'active' : 'pending'; ?>">
+                                                        <?php echo $isPublished ? 'Active' : 'In Review'; ?>
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        <?php endforeach; ?>
+                                    <?php else: ?>
+                                        <tr>
+                                            <td colspan="5" style="text-align:center; padding:24px; color:#64748b;">No course statistics available.</td>
+                                        </tr>
+                                    <?php endif; ?>
                                 </tbody>
                             </table>
                         </div>
                     </section>
-                    <!-- Dynamic notes / report disclaimer here -->
-
                 </div>
             </main>
         </div>

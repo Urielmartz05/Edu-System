@@ -7,12 +7,12 @@
 ?>
 
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
     <link rel="stylesheet" href="style.css">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Iniciar Sesión · Edu-System</title>
+    <title>Sign In · Edu-System</title>
 </head>
 <body>
 
@@ -20,19 +20,19 @@
 
     <main class="login-main">
         <div class="login-main-container">
-            <h1 class="login-title">Inicio de Sesión</h1>
+            <h1 class="login-title">Sign In</h1>
             <form class="login-form" action="./src/controllers/auth/loginProcess.php" method="POST">
-                <label>Email</label>
-                <input type="email" name="email" placeholder="Ingresa tu correo" required>
+                <label>Email Address</label>
+                <input type="email" name="email" placeholder="Enter your email" required>
 
-                <label>Contraseña</label>
-                <input type="password" name="password" placeholder="Ingresa tu contraseña" required>
+                <label>Password</label>
+                <input type="password" name="password" placeholder="Enter your password" required>
 
-                <button class="login-button" type="submit">Entrar</button>
+                <button class="login-button" type="submit">Log In</button>
             </form>
 
             <p class="login-message"><?php echo htmlspecialchars($mensaje); ?></p>
-            <a class="login-link" href="./src/views/signup/signup.php">Crear cuenta</a>
+            <a class="login-link" href="./src/views/signup/signup.php">Create an account</a>
         </div>
     </main>
 </body>

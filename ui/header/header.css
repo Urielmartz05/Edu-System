@@ -1,22 +1,22 @@
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap');
 
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    font-family: 'Poppins', sans-serif;
-}
-
-header {
+header.main-header {
     background-color: #8B1528;
     height: 82px;
-    position: sticky;
+    position: fixed;
     top: 0;
+    left: 0;
+    width: 100%;
     z-index: 100;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.18);
+    box-shadow: 0 2px 14px rgba(0, 0, 0, 0.16);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-nav {
+body {
+    padding-top: 82px;
+}
+
+header.main-header nav {
     width: 100%;
     height: 100%;
     display: flex;
@@ -25,67 +25,132 @@ nav {
     padding: 0 32px;
 }
 
-.logo p {
-    background-image: url("https://www.usgbc.org/sites/default/files/BSU-logo-horiz-Black-RGB.png");
-    background-size: contain;
-    background-position: left center;
-    background-repeat: no-repeat;
-    width: 300px;
-    height: 60px;
-    filter: invert(1);
-    transition: opacity 0.2s ease;
-    cursor: pointer;
+/* Brand Identity */
+header.main-header .logo {
+    display: flex;
+    align-items: center;
 }
 
-.logo p:hover {
-    opacity: 0.85;
+header.main-header .school-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+    color: #ffffff;
+    transition: opacity 0.2s ease, transform 0.2s ease;
 }
 
-ul {
+header.main-header .school-brand:hover {
+    opacity: 0.92;
+    transform: translateY(-1px);
+}
+
+header.main-header .school-brand-title {
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    color: #ffffff;
+}
+
+header.main-header .school-brand-pill {
+    font-size: 10.5px;
+    font-weight: 700;
+    background: rgba(255, 255, 255, 0.16);
+    color: #ffffff;
+    padding: 3px 9px;
+    border-radius: 9999px;
+    letter-spacing: 0.08em;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Auth Navigation (Unauthenticated) */
+header.main-header .header-auth-nav {
     display: flex;
     flex-direction: row;
-    gap: 30px;
+    align-items: center;
+    gap: 20px;
+    list-style: none;
+    margin: 0;
+    padding: 0;
 }
 
-ul li {
+header.main-header .header-auth-nav li {
     list-style: none;
 }
 
-li a {
+header.main-header .header-nav-link {
     text-decoration: none;
-    color: white;
-    font-weight: bold;
-    transition: color 0.2s ease;
+    color: #ffffff;
+    font-weight: 600;
+    font-size: 14px;
+    transition: color 0.15s ease;
 }
 
-li a:hover {
+header.main-header .header-nav-link:hover {
     color: #fecdd3;
 }
 
-.user-session {
-    display: flex;
-    align-items: center;
-    gap: 20px;
-}
-
-.user {
-    color: white;
-    font-size: 15px;
-    font-weight: 600;
-}
-
-.logout-link {
+header.main-header .header-signup-btn {
     text-decoration: none;
-    color: white;
-    font-weight: bold;
-    font-size: 14px;
-    padding: 6px 14px;
-    border: 1px solid rgba(255, 255, 255, 0.4);
-    border-radius: 6px;
+    color: #8B1528;
+    background-color: #ffffff;
+    font-weight: 700;
+    font-size: 13.5px;
+    padding: 8px 18px;
+    border-radius: 8px;
     transition: all 0.2s ease;
 }
 
-.logout-link:hover {
-    background-color: white;
+header.main-header .header-signup-btn:hover {
+    background-color: #fecdd3;
+    transform: translateY(-1px);
+}
+
+/* User Session Bar (Authenticated) */
+header.main-header .user-session {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+header.main-header .user-role-badge {
+    color: #ffffff;
+    font-size: 13.5px;
+    font-weight: 600;
+    background: rgba(255, 255, 255, 0.14);
+    padding: 5px 12px;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    letter-spacing: 0.02em;
+}
+
+header.main-header .logout-link {
+    text-decoration: none;
+    color: #ffffff;
+    font-weight: 600;
+    font-size: 13px;
+    padding: 6px 14px;
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+header.main-header .logout-link:hover {
+    background-color: #ffffff;
     color: #8B1528;
+    border-color: #ffffff;
+    transform: translateY(-1px);
+}
+
+header.main-header .logout-link:active {
+    transform: scale(0.97);
+}
+
+@media (max-width: 640px) {
+    header.main-header nav {
+        padding: 0 18px;
+    }
+    header.main-header .school-brand-pill {
+        display: none;
+    }
 }
