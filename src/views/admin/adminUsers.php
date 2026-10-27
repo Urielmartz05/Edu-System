@@ -243,10 +243,15 @@
                                                                 </button>
                                                             </form>
                                                         <?php else: ?>
-                                                            <form method="POST" action="../../controllers/admin/manageUser.php?action=reset_password&user_id=<?php echo urlencode($u['id']); ?>" style="display:inline;"><?php echo csrfField(); ?><button type="submit"  class="btn-table-action" title="Reset Temporary Password">
-                                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.5" cy="15.5" r="5.5"/><path d="m21 2-9.6 9.6"/><path d="m15.5 7.5 3 3L22 7l-3-3"/></svg>
-                                                                <span>Reset</span>
-                                                            </button></form>
+                                                            <form method="POST" action="../../controllers/admin/manageUser.php" style="display:inline;" onsubmit="return confirm('Reset temporary password for <?php echo htmlspecialchars($u['name'] . ' ' . ($u['lastname'] ?? '')); ?> to password123?');">
+                                                                <?php echo csrfField(); ?>
+                                                                <input type="hidden" name="action" value="reset_password">
+                                                                <input type="hidden" name="user_id" value="<?php echo (int)$u['id']; ?>">
+                                                                <button type="submit" class="btn-table-action" title="Reset Temporary Password">
+                                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.5" cy="15.5" r="5.5"/><path d="m21 2-9.6 9.6"/><path d="m15.5 7.5 3 3L22 7l-3-3"/></svg>
+                                                                    <span>Reset</span>
+                                                                </button>
+                                                            </form>
                                                         <?php endif; ?>
                                                         <?php if ((int)$u['id'] !== (int)$user['id']): ?>
                                                             <a href="adminUsers.php?confirm_delete_id=<?php echo (int)$u['id']; ?>" class="btn-table-action" style="color:#dc2626;" title="Delete User Account">
@@ -369,6 +374,33 @@
                     }
                 });
             </script>
+        <?php endif; ?>
+
+        <!-- Delete User Confirmation Modal (Pure PHP) -->
+        <?php if ($userToDelete): ?>
+            <div id="deleteUserModal" class="modal-overlay" style="display:flex;">
+                <div class="modal-card" style="max-width:440px;">
+                    <div class="modal-header">
+                        <div>
+                            <h3 style="font-size:16px; font-weight:700; color:#dc2626;">Confirm Deletion</h3>
+                            <p style="font-size:12px; color:#64748b; margin-top:2px;">Are you sure you want to permanently delete this user account?</p>
+                        </div>
+                        <a href="adminUsers.php" class="btn-modal-close" style="text-decoration:none;">&times;</a>
+                    </div>
+                    <div style="background:#fef2f2; border:1px solid #fecdd3; border-radius:8px; padding:12px 14px; margin:16px 0; font-size:13px; color:#991b1b;">
+                        <strong>User:</strong> <?php echo htmlspecialchars($userToDelete['name'] . ' ' . ($userToDelete['lastname'] ?? '')); ?> (<code>#<?php echo (int)$userToDelete['id']; ?></code>)<br>
+                        <strong>Email:</strong> <?php echo htmlspecialchars($userToDelete['email']); ?><br>
+                        <strong>Role:</strong> <?php echo htmlspecialchars($userToDelete['role_name']); ?>
+                    </div>
+                    <form action="../../controllers/admin/manageUser.php" method="POST" style="display:flex; justify-content:flex-end; gap:10px;">
+                        <?php echo csrfField(); ?>
+                        <input type="hidden" name="action" value="delete_user">
+                        <input type="hidden" name="user_id" value="<?php echo (int)$userToDelete['id']; ?>">
+                        <a href="adminUsers.php" class="btn btn-secondary" style="text-decoration:none;">Cancel</a>
+                        <button type="submit" class="btn btn-primary" style="background:#dc2626; border-color:#dc2626;">Permanently Delete</button>
+                    </form>
+                </div>
+            </div>
         <?php endif; ?>
     </body>
 </html>
