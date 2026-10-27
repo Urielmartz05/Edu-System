@@ -51,6 +51,17 @@
         }
     }
 
+    $renameBlockId = (int)($_GET['rename_block_id'] ?? 0);
+    $blockToRename = null;
+    if ($renameBlockId > 0) {
+        foreach ($blocks as $b) {
+            if ((int)$b['id'] === $renameBlockId) {
+                $blockToRename = $b;
+                break;
+            }
+        }
+    }
+
     // Fetch attached study files for each module/block
     $blockFiles = [];
     foreach ($blocks as $b) {
@@ -67,7 +78,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo htmlspecialchars($course['course_name']); ?> · Course Syllabus & Materials · Edu-System</title>
+    <title><?php echo htmlspecialchars($course['course_name']); ?> · Course Syllabus & Materials · EduX</title>
     <link rel="stylesheet" href="directorCourseContent.css">
 </head>
 <body>
@@ -202,6 +213,20 @@
                                                         <span style="font-size: 12px; color: #64748b; font-weight: 500;">
                                                             <?php echo count($files); ?> file(s)
                                                         </span>
+                                                        <a href="directorCourseContent.php?course_id=<?php echo (int)$courseId; ?>&rename_block_id=<?php echo (int)$b['id']; ?>" style="display:inline-flex; align-items:center; gap:4px; padding:4px 9px; font-size:12px; font-weight:600; color:#0f766e; background:#f0fdfa; border:1px solid #99f6e4; border-radius:6px; text-decoration:none;" title="Edit Module Title">
+                                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                                                            <span>Edit Name</span>
+                                                        </a>
+                                                        <form method="POST" action="../../controllers/admin/manageCourseActions.php" style="display:inline; margin:0;" onsubmit="return confirm('Delete this module and all its attached resources permanently?');">
+                                                            <?php echo csrfField(); ?>
+                                                            <input type="hidden" name="action" value="delete_block">
+                                                            <input type="hidden" name="block_id" value="<?php echo (int)$b['id']; ?>">
+                                                            <input type="hidden" name="course_id" value="<?php echo (int)$courseId; ?>">
+                                                            <button type="submit" style="display:inline-flex; align-items:center; gap:4px; padding:4px 9px; font-size:12px; font-weight:600; color:#dc2626; background:#fef2f2; border:1px solid #fecdd3; border-radius:6px; cursor:pointer;" title="Delete Module Block">
+                                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                                                                <span>Remove</span>
+                                                            </button>
+                                                        </form>
                                                     </div>
                                                 </div>
 
@@ -406,6 +431,37 @@
                     <div style="display:flex; justify-content:flex-end; gap:10px;">
                         <a href="directorCourseContent.php?course_id=<?php echo (int)$courseId; ?>" class="btn-modal-cancel">Cancel</a>
                         <button type="submit" class="btn-modal-submit">Update Instructor</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    <?php endif; ?>
+
+    <!-- Rename Module Modal (Pure PHP) -->
+    <?php if ($blockToRename): ?>
+        <div id="renameModal" class="modal-overlay" style="display:flex;">
+            <div class="modal-card">
+                <div class="modal-header">
+                    <div>
+                        <h3 style="font-size:16px; font-weight:700; color:#0f172a;">Edit Module Title</h3>
+                        <p style="font-size:12px; color:#64748b; margin-top:2px;">Update the syllabus title for this curricular unit.</p>
+                    </div>
+                    <a href="directorCourseContent.php?course_id=<?php echo (int)$courseId; ?>" class="btn-modal-close" style="text-decoration:none;">&times;</a>
+                </div>
+                <form action="../../controllers/admin/manageBlock.php" method="POST" style="margin-top:18px;"><?php echo csrfField(); ?>
+                    <input type="hidden" name="course_id" value="<?php echo (int)$courseId; ?>">
+                    <input type="hidden" name="block_id" value="<?php echo (int)$blockToRename['id']; ?>">
+                    <input type="hidden" name="action" value="rename_block">
+                    <input type="hidden" name="return_url" value="directorCourseContent.php?course_id=<?php echo (int)$courseId; ?>">
+
+                    <div style="margin-bottom:20px;">
+                        <label for="rename_block_name" style="display:block; font-size:12px; font-weight:600; color:#334155; margin-bottom:6px;">Module Title *</label>
+                        <input type="text" id="rename_block_name" name="block_name" value="<?php echo htmlspecialchars($blockToRename['block_name']); ?>" class="modal-field" maxlength="60" required autofocus>
+                    </div>
+
+                    <div style="display:flex; justify-content:flex-end; gap:10px;">
+                        <a href="directorCourseContent.php?course_id=<?php echo (int)$courseId; ?>" class="btn-modal-cancel">Cancel</a>
+                        <button type="submit" class="btn-modal-submit" style="background:#0f766e; border-color:#0f766e;">Save Changes</button>
                     </div>
                 </form>
             </div>

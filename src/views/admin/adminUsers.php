@@ -66,7 +66,7 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Users · Edu-System</title>
+        <title>Users · EduX</title>
         <link rel="stylesheet" href="adminUsers.css">
     </head>
     <body>

@@ -53,7 +53,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Department Assignments Supervision · Edu-System</title>
+    <title>Department Assignments Supervision · EduX</title>
     <link rel="stylesheet" href="directorAssignments.css">
 </head>
 <body>

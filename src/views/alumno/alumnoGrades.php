@@ -35,7 +35,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Academic Grades & Performance · Edu-System</title>
+    <title>Academic Grades & Performance · EduX</title>
     <link rel="stylesheet" href="alumnoGrades.css">
 </head>
 <body>

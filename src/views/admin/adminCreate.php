@@ -63,7 +63,7 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Administrative Provisioning Hub · Edu-System</title>
+        <title>Administrative Provisioning Hub · EduX</title>
         <link rel="stylesheet" href="adminCreate.css">
     </head>
     <body>
@@ -558,7 +558,7 @@
                                         <label for="dir_email">
                                             <span class="label-title">Institutional Email Address <span class="label-required">*</span></span>
                                         </label>
-                                        <input class="field" type="email" id="dir_email" name="email" placeholder="e.g. msterling@edu-system.com" required>
+                                        <input class="field" type="email" id="dir_email" name="email" placeholder="e.g. msterling@edux.com" required>
                                         <span class="field-caption">Primary login credential for Director Leadership Portal.</span>
                                     </div>
 
@@ -651,7 +651,7 @@
                                             <span class="label-title">Institutional Email Address <span class="label-required">*</span></span>
                                             <span class="label-hint">Domain verified</span>
                                         </label>
-                                        <input class="field" type="email" id="student_email" name="email" placeholder="e.g. mgonzalez@edu-system.com" required>
+                                        <input class="field" type="email" id="student_email" name="email" placeholder="e.g. mgonzalez@edux.com" required>
                                         <span class="field-caption">Credentials and syllabus announcements will be routed to this address.</span>
                                     </div>
 
@@ -759,7 +759,7 @@
                                         <label for="teacher_email">
                                             <span class="label-title">Academic Email Address <span class="label-required">*</span></span>
                                         </label>
-                                        <input class="field" type="email" id="teacher_email" name="email" placeholder="e.g. rthorne@edu-system.com" required>
+                                        <input class="field" type="email" id="teacher_email" name="email" placeholder="e.g. rthorne@edux.com" required>
                                         <span class="field-caption">Designated faculty inbox for student inquiries and institutional bulletins.</span>
                                     </div>
 
@@ -867,7 +867,7 @@
                                         <label for="admin_email">
                                             <span class="label-title">Governance Email Address <span class="label-required">*</span></span>
                                         </label>
-                                        <input class="field" type="email" id="admin_email" name="email" placeholder="e.g. vvance@edu-system.com" required>
+                                        <input class="field" type="email" id="admin_email" name="email" placeholder="e.g. vvance@edux.com" required>
                                         <span class="field-caption">Security audit events and verification alerts are dispatched to this mailbox.</span>
                                     </div>
 

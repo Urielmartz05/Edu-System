@@ -28,6 +28,17 @@
 
     $teachersList = $coursesModel->getTeachersList();
 
+    $renameBlockId = (int)($_GET['rename_block_id'] ?? 0);
+    $blockToRename = null;
+    if ($renameBlockId > 0) {
+        foreach ($blocks as $b) {
+            if ((int)$b['id'] === $renameBlockId) {
+                $blockToRename = $b;
+                break;
+            }
+        }
+    }
+
     $flashSuccess = $_SESSION['flash_success'] ?? null;
     $flashError = $_SESSION['flash_error'] ?? null;
     unset($_SESSION['flash_success'], $_SESSION['flash_error']);
@@ -41,7 +52,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo htmlspecialchars($course['course_name']); ?> · Course Inspector · Edu-System</title>
+    <title><?php echo htmlspecialchars($course['course_name']); ?> · Course Inspector · EduX</title>
     <link rel="stylesheet" href="adminCourseContent.css">
 </head>
 <body>
@@ -184,6 +195,10 @@
                                                             <span class="instructor-name"><?php echo htmlspecialchars($b['teacher_name']); ?></span>
                                                             <span class="instructor-role">Module Instructor</span>
                                                         </div>
+                                                        <a href="adminCourseContent.php?course_id=<?php echo (int)$course['id']; ?>&rename_block_id=<?php echo (int)$b['id']; ?>" class="btn-file-action" style="color:#0f766e; border-color:#99f6e4; margin-left:10px; text-decoration:none;" title="Edit Module Title">
+                                                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                                                            <span>Edit Name</span>
+                                                        </a>
                                                         <form method="POST" action="../../controllers/admin/manageCourseActions.php" style="display:inline;" onsubmit="return confirm('Delete this module and its resources permanently?');">
                                                             <?php echo csrfField(); ?>
                                                             <input type="hidden" name="action" value="delete_block">
@@ -362,6 +377,37 @@
                     <div style="display:flex; justify-content:flex-end; gap:10px;">
                         <a href="adminCourseContent.php?course_id=<?php echo (int)$course['id']; ?>" class="btn btn-secondary" style="text-decoration:none;">Cancel</a>
                         <button type="submit" class="btn btn-primary">Create Module</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    <?php endif; ?>
+
+    <!-- Rename Module Modal (Pure PHP) -->
+    <?php if ($blockToRename): ?>
+        <div id="renameModal" class="modal-overlay" style="display:flex;">
+            <div class="modal-card">
+                <div class="modal-header">
+                    <div>
+                        <h3 style="font-size:16px; font-weight:700; color:#0f172a;">Edit Module Title</h3>
+                        <p style="font-size:12px; color:#64748b; margin-top:2px;">Update syllabus title for "<?php echo htmlspecialchars($blockToRename['block_name']); ?>".</p>
+                    </div>
+                    <a href="adminCourseContent.php?course_id=<?php echo (int)$course['id']; ?>" class="btn-modal-close" style="text-decoration:none;">&times;</a>
+                </div>
+                <form action="../../controllers/admin/manageBlock.php" method="POST" style="margin-top:18px;"><?php echo csrfField(); ?>
+                    <input type="hidden" name="course_id" value="<?php echo (int)$course['id']; ?>">
+                    <input type="hidden" name="block_id" value="<?php echo (int)$blockToRename['id']; ?>">
+                    <input type="hidden" name="action" value="rename_block">
+                    <input type="hidden" name="return_url" value="adminCourseContent.php?course_id=<?php echo (int)$course['id']; ?>">
+
+                    <div style="margin-bottom:20px;">
+                        <label for="rename_block_name" style="display:block; font-size:12px; font-weight:600; color:#334155; margin-bottom:6px;">Module / Block Title *</label>
+                        <input type="text" id="rename_block_name" name="block_name" value="<?php echo htmlspecialchars($blockToRename['block_name']); ?>" class="modal-field" maxlength="60" required autofocus>
+                    </div>
+
+                    <div style="display:flex; justify-content:flex-end; gap:10px;">
+                        <a href="adminCourseContent.php?course_id=<?php echo (int)$course['id']; ?>" class="btn btn-secondary" style="text-decoration:none;">Cancel</a>
+                        <button type="submit" class="btn btn-primary" style="background:#0f766e; border-color:#0f766e;">Save Changes</button>
                     </div>
                 </form>
             </div>

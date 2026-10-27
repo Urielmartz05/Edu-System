@@ -16,7 +16,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Student Dashboard · Edu-System</title>
+    <title>Student Dashboard · EduX</title>
     <link rel="stylesheet" href="alumnoDashboard.css">
 </head>
 <body>

@@ -5,13 +5,14 @@
     font-family: 'Poppins', Arial, Helvetica, sans-serif;
 }
 
-body {
-    background-color: #f1f5f9;
+html, body {
+    height: 100%;
+    background-color: #0b0f19;
 }
 
 .registro-main {
     width: 100%;
-    min-height: 90vh;
+    min-height: calc(100vh - 82px);
     display: flex;
     justify-content: center;
     align-items: center;
@@ -36,10 +37,9 @@ body {
 
 .registro-columna-derecha {
     width: 50%;
-    background-color: white;
-    border-left: 1px solid #f1f5f9;
-    background-image: url("https://coursera-university-assets.s3.amazonaws.com/33/d3c2ebd8e24a18bf14a5754b613945/BSU-logo-vert-RGB-1-1-.png");
-    background-size: 78%;
+    background-color: #8B1528;
+    background-image: url("/resources/images/Edux.png");
+    background-size: 70%;
     background-position: center;
     background-repeat: no-repeat;
 }

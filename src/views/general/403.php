@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Access Denied (403) · Edu-System</title>
+    <title>Access Denied (403) · EduX</title>
     <link rel="stylesheet" href="/style.css">
     <style>
         .error-container {
@@ -64,7 +64,7 @@
         <div class="error-card">
             <h1 class="error-code">403</h1>
             <h2 class="error-title">Access Restricted</h2>
-            <p class="error-desc">You do not have the required role or permissions to access this division of Edu-System.</p>
+            <p class="error-desc">You do not have the required role or permissions to access this division of EduX.</p>
             <a href="/index.php" class="btn-home">Return to Home</a>
         </div>
     </div>

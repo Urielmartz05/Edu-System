@@ -50,7 +50,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Division Courses & Curricula · Edu-System</title>
+    <title>Division Courses & Curricula · EduX</title>
     <link rel="stylesheet" href="directorCourses.css">
 </head>
 <body>

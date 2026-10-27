@@ -47,11 +47,25 @@
             exit;
         }
 
-        $block = $teacherCoursesModel->getCourseBlocksWithFiles($courseId, $teacherId);
-        if (!in_array($blockId, array_map('intval', array_column($block, 'id')), true)) {
-            $_SESSION['flash_error'] = "The module does not belong to this course.";
-            header("Location: ../../views/ponente/ponenteAssignments.php");
-            exit;
+        if ($userRole === 3) {
+            $block = $teacherCoursesModel->getCourseBlocksWithFiles($courseId, $teacherId);
+            if (!in_array($blockId, array_map('intval', array_column($block, 'id')), true)) {
+                $_SESSION['flash_error'] = "The module does not belong to this course.";
+                header("Location: ../../views/ponente/ponenteAssignments.php");
+                exit;
+            }
+        } else {
+            require_once __DIR__ . '/../../models/adminModels/adminCoursesModel.php';
+            $adminCoursesModel = new AdminCourses();
+            $blockDetails = $adminCoursesModel->getBlockManagementDetails($blockId);
+            if (!$blockDetails || (int)$blockDetails['course_id'] !== $courseId) {
+                $_SESSION['flash_error'] = "The module does not belong to this course.";
+                header("Location: ../../views/ponente/ponenteAssignments.php");
+                exit;
+            }
+            if (!empty($blockDetails['teacher_id'])) {
+                $teacherId = (int)$blockDetails['teacher_id'];
+            }
         }
         if (isset($_FILES['attachment']) && !in_array($_FILES['attachment']['error'], [UPLOAD_ERR_OK, UPLOAD_ERR_NO_FILE], true)) {
             $_SESSION['flash_error'] = "The attachment upload failed. Please try again.";
@@ -109,6 +123,106 @@
         }
 
         header("Location: ../../views/ponente/ponenteAssignments.php?course_id={$courseId}");
+        exit;
+    }
+
+    // ==========================================
+    // ACTION: UPDATE ASSIGNMENT
+    // ==========================================
+    if ($action === 'update' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+        $assignmentId = (int)($_POST['assignment_id'] ?? 0);
+        $blockId = (int)($_POST['block_id'] ?? 0);
+        $title = trim($_POST['title'] ?? '');
+        $description = trim($_POST['description'] ?? '');
+        $maxScore = (float)($_POST['max_score'] ?? 100.00);
+        $dueDate = trim($_POST['due_date'] ?? '');
+        $clearAttachment = !empty($_POST['clear_attachment']);
+
+        if ($assignmentId <= 0 || $blockId <= 0 || empty($title) || empty($dueDate) || strtotime($dueDate) === false || !is_finite($maxScore) || $maxScore <= 0 || $maxScore > 999.99) {
+            $_SESSION['flash_error'] = "Syllabus block, title, maximum score, and due date are mandatory.";
+            header("Location: ../../views/ponente/ponenteAssignments.php?action=edit&edit_id={$assignmentId}");
+            exit;
+        }
+
+        $assignment = $assignmentModel->getAssignmentDetails($assignmentId);
+        if (!$assignment || ($userRole === 3 && (int)$assignment['teacher_id'] !== $teacherId)) {
+            $_SESSION['flash_error'] = "You are not authorized to edit this assignment.";
+            header("Location: ../../views/ponente/ponenteAssignments.php");
+            exit;
+        }
+
+        $courseId = (int)$assignment['course_id'];
+
+        // Validate that the new maximum score is not lower than any already awarded grade
+        $highestGradedScore = $assignmentModel->getMaxGradedScore($assignmentId);
+        if ($highestGradedScore !== null && $maxScore < $highestGradedScore) {
+            $_SESSION['flash_error'] = "Cannot reduce maximum score to " . number_format($maxScore, 1) . " pts because a student has already been graded with " . number_format($highestGradedScore, 1) . " pts. Please set a maximum score of at least " . number_format($highestGradedScore, 1) . " pts.";
+            header("Location: ../../views/ponente/ponenteAssignments.php?action=edit&edit_id={$assignmentId}");
+            exit;
+        }
+
+        // Verify teacher authorization for the target block (unless admin)
+        if ($userRole === 3 && !$teacherCoursesModel->isTeacherOfBlock($teacherId, $blockId)) {
+            $_SESSION['flash_error'] = "You are not authorized to assign coursework to this course module.";
+            header("Location: ../../views/ponente/ponenteAssignments.php?action=edit&edit_id={$assignmentId}");
+            exit;
+        }
+
+        if (isset($_FILES['attachment']) && !in_array($_FILES['attachment']['error'], [UPLOAD_ERR_OK, UPLOAD_ERR_NO_FILE], true)) {
+            $_SESSION['flash_error'] = "The attachment upload failed. Please try again.";
+            header("Location: ../../views/ponente/ponenteAssignments.php?action=edit&edit_id={$assignmentId}");
+            exit;
+        }
+
+        $filePath = null;
+
+        // Handle prompt attachment file replacement
+        if (isset($_FILES['attachment']) && $_FILES['attachment']['error'] === UPLOAD_ERR_OK) {
+            $file = $_FILES['attachment'];
+            $maxFileSize = 25 * 1024 * 1024; // 25 MB
+
+            if ($file['size'] > $maxFileSize) {
+                $_SESSION['flash_error'] = "Attached file exceeds the 25 MB limit.";
+                header("Location: ../../views/ponente/ponenteAssignments.php?action=edit&edit_id={$assignmentId}");
+                exit;
+            }
+
+            $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+            $allowedExts = ['pdf', 'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx', 'txt', 'zip', 'rar', 'png', 'jpg', 'jpeg'];
+
+            if (!in_array($ext, $allowedExts)) {
+                $_SESSION['flash_error'] = "File type .{$ext} is not supported.";
+                header("Location: ../../views/ponente/ponenteAssignments.php?action=edit&edit_id={$assignmentId}");
+                exit;
+            }
+
+            $uploadDir = __DIR__ . '/../../../resources/assignments/';
+            if (!is_dir($uploadDir)) {
+                mkdir($uploadDir, 0777, true);
+            }
+
+            $fileName = 'assignment_' . time() . '_' . bin2hex(random_bytes(5)) . '.' . $ext;
+            $targetPath = $uploadDir . $fileName;
+
+            if (move_uploaded_file($file['tmp_name'], $targetPath)) {
+                $filePath = 'resources/assignments/' . $fileName;
+            } else {
+                $_SESSION['flash_error'] = "Could not store the attached resource file.";
+                header("Location: ../../views/ponente/ponenteAssignments.php?action=edit&edit_id={$assignmentId}");
+                exit;
+            }
+        }
+
+        $updated = $assignmentModel->updateAssignment($assignmentId, $blockId, $title, $description, $maxScore, $dueDate, $filePath, ($userRole === 1 ? null : $teacherId), $clearAttachment);
+
+        if ($updated) {
+            $_SESSION['flash_success'] = "Assignment '{$title}' updated successfully.";
+        } else {
+            $_SESSION['flash_error'] = "Database error while updating the assignment.";
+        }
+
+        $redirectUrl = ($userRole === 1) ? "../../views/admin/adminAssignments.php" : "../../views/ponente/ponenteAssignments.php?course_id={$courseId}";
+        header("Location: " . $redirectUrl);
         exit;
     }
 

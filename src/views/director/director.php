@@ -39,7 +39,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Director Portal · Edu-System</title>
+    <title>Director Portal · EduX</title>
     <link rel="stylesheet" href="director.css">
 </head>
 <body>

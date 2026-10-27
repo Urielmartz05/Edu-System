@@ -34,30 +34,26 @@ header.main-header .logo {
 header.main-header .school-brand {
     display: flex;
     align-items: center;
-    gap: 10px;
     text-decoration: none;
-    color: #ffffff;
-    cursor: default;
+    cursor: pointer;
     user-select: none;
+    padding: 4px 0;
 }
 
-header.main-header .school-brand-title {
-    font-size: 22px;
-    font-weight: 800;
-    letter-spacing: -0.02em;
-    color: #ffffff;
+header.main-header .school-brand-logo {
+    height: 56px;
+    max-height: 58px;
+    width: auto;
+    object-fit: contain;
+    display: block;
+    transition: transform 0.2s ease, opacity 0.2s ease;
 }
 
-header.main-header .school-brand-pill {
-    font-size: 10.5px;
-    font-weight: 700;
-    background: rgba(255, 255, 255, 0.16);
-    color: #ffffff;
-    padding: 3px 9px;
-    border-radius: 9999px;
-    letter-spacing: 0.08em;
-    border: 1px solid rgba(255, 255, 255, 0.2);
+header.main-header .school-brand:hover .school-brand-logo {
+    transform: scale(1.03);
+    opacity: 0.95;
 }
+
 
 /* Auth Navigation (Unauthenticated) */
 header.main-header .header-auth-nav {

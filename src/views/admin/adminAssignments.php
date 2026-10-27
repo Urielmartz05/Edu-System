@@ -50,7 +50,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Institutional Assignments Repository · Edu-System</title>
+    <title>Institutional Assignments Repository · EduX</title>
     <link rel="stylesheet" href="adminAssignments.css">
 </head>
 <body>
@@ -208,6 +208,10 @@
                                                 <?php endif; ?>
                                             </td>
                                             <td style="text-align: right; white-space: nowrap;">
+                                                <a href="../ponente/ponenteAssignments.php?action=edit&edit_id=<?php echo (int)$a['id']; ?>" class="btn-review-link" style="display:inline-flex; align-items:center; gap:4px; font-size:12px; font-weight:600; color:#0f766e; background:#f0fdfa; border:1px solid #99f6e4; padding:5px 10px; border-radius:6px; text-decoration:none; margin-right:6px;" title="Edit Assignment Parameters">
+                                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                                                    Edit
+                                                </a>
                                                 <a href="../ponente/ponenteAssignments.php?review_id=<?php echo (int)$a['id']; ?>" class="btn-review-link" style="display:inline-flex; align-items:center; gap:4px; font-size:12px; font-weight:600; color:#2563eb; background:#eff6ff; border:1px solid #bfdbfe; padding:5px 10px; border-radius:6px; text-decoration:none; margin-right:6px;" title="Review & Grade Submissions">
                                                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
                                                     Review / Grade

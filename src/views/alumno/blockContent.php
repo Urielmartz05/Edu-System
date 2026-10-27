@@ -38,7 +38,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo htmlspecialchars($block['block_name']); ?> · Edu-System</title>
+    <title><?php echo htmlspecialchars($block['block_name']); ?> · EduX</title>
     <link rel="stylesheet" href="blockContent.css">
 </head>
 <body>

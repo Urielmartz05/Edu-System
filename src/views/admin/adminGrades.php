@@ -66,7 +66,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Institutional Academic Grade Audit · Edu-System</title>
+    <title>Institutional Academic Grade Audit · EduX</title>
     <link rel="stylesheet" href="adminGrades.css">
 </head>
 <body>

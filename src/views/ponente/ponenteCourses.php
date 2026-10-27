@@ -27,13 +27,19 @@
             return strtolower($statusText) === strtolower($statusFilter);
         });
     }
+
+    $allTeacherCourses = $coursesModel->getCoursesWithDetails($teacherId);
+    $flashSuccess = $_SESSION['flash_success'] ?? null;
+    $flashError = $_SESSION['flash_error'] ?? null;
+    unset($_SESSION['flash_success'], $_SESSION['flash_error']);
+    $showAddBlockModal = !empty($_GET['add_block']);
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Courses · Edu-System</title>
+    <title>My Courses · EduX</title>
     <link rel="stylesheet" href="ponenteCourses.css">
 </head>
 <body>
@@ -52,6 +58,19 @@
                     </div>
                 </section>
 
+                <!-- Flash Messages -->
+                <?php if ($flashSuccess): ?>
+                    <div style="background-color: #ecfdf5; border: 1px solid #a7f3d0; color: #065f46; padding: 14px 20px; border-radius: 12px; margin-bottom: 24px; font-size: 13px; font-weight: 500; display:flex; align-items:center; gap:10px;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                        <span><?php echo htmlspecialchars($flashSuccess); ?></span>
+                    </div>
+                <?php elseif ($flashError): ?>
+                    <div style="background-color: #fef2f2; border: 1px solid #fecdd3; color: #b91c1c; padding: 14px 20px; border-radius: 12px; margin-bottom: 24px; font-size: 13px; font-weight: 500; display:flex; align-items:center; gap:10px;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                        <span><?php echo htmlspecialchars($flashError); ?></span>
+                    </div>
+                <?php endif; ?>
+
                 <!-- Main Courses Panel -->
                 <section class="panel">
                     <div class="panel-head">
@@ -59,7 +78,13 @@
                             <h2>Assigned Curricular Programs</h2>
                             <p>Complete directory of courses and groups for the current academic period.</p>
                         </div>
-                        <span class="badge-tag"><?php echo count($assignedCourses); ?> Course(s)</span>
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <span class="badge-tag"><?php echo count($assignedCourses); ?> Course(s)</span>
+                            <a href="ponenteCourses.php?add_block=1" class="btn-primary" style="padding: 8px 16px; border-radius: 8px; text-decoration:none; background:#8B1528; color:#fff; font-weight:700; font-size:13px; display:inline-flex; align-items:center; gap:6px; box-shadow: 0 2px 4px rgba(139,21,40,0.25);">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                <span>Add Block</span>
+                            </a>
+                        </div>
                     </div>
 
                     <form method="GET" action="ponenteCourses.php" class="filters-bar">
@@ -141,5 +166,47 @@
             </div>
         </main>
     </div>
+
+    <!-- Create Block Modal (Pure PHP query parameter ?add_block=1) -->
+    <?php if ($showAddBlockModal): ?>
+        <div style="position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(15,23,42,0.5); display:flex; align-items:center; justify-content:center; z-index:1000; padding:20px;">
+            <div style="background:#fff; border-radius:14px; width:100%; max-width:480px; padding:24px 28px; box-shadow:0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);">
+                <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:16px; padding-bottom:14px; border-bottom:1px solid #f1f5f9;">
+                    <div>
+                        <h3 style="font-size:16px; font-weight:700; color:#0f172a; margin:0;">Add Syllabus Block</h3>
+                        <p style="font-size:12px; color:#64748b; margin:4px 0 0 0;">Create a new instructional block for one of your assigned courses.</p>
+                    </div>
+                    <a href="ponenteCourses.php" style="background:none; border:none; font-size:22px; line-height:1; color:#94a3b8; text-decoration:none; cursor:pointer;">&times;</a>
+                </div>
+                <form action="../../controllers/admin/manageBlock.php" method="POST" style="margin-top:18px;"><?php echo csrfField(); ?>
+                    <input type="hidden" name="action" value="create_block">
+                    <input type="hidden" name="return_url" value="ponenteCourses.php">
+
+                    <div style="margin-bottom:16px;">
+                        <label for="course_select" style="display:block; font-size:12px; font-weight:600; color:#334155; margin-bottom:6px;">Target Course *</label>
+                        <select id="course_select" name="course_id" style="width:100%; height:40px; padding:0 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:13px; color:#1e293b; background:#fff;" required>
+                            <option value="">Select course...</option>
+                            <?php foreach ($allTeacherCourses as $tc): ?>
+                                <option value="<?php echo (int)$tc['id']; ?>">
+                                    <?php echo htmlspecialchars($tc['course_name']); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+
+                    <div style="margin-bottom:20px;">
+                        <label for="block_name" style="display:block; font-size:12px; font-weight:600; color:#334155; margin-bottom:6px;">Block / Unit Title *</label>
+                        <input type="text" id="block_name" name="block_name" placeholder="e.g. Unit 3: Advanced Architecture & Testing" maxlength="60" style="width:100%; height:40px; padding:0 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:13px; color:#1e293b; box-sizing:border-box;" required>
+                        <span style="font-size:11.5px; color:#64748b; margin-top:4px; display:block;">You will be designated as the instructor for this block.</span>
+                    </div>
+
+                    <div style="display:flex; justify-content:flex-end; gap:10px;">
+                        <a href="ponenteCourses.php" style="padding:8px 16px; border:1px solid #cbd5e1; border-radius:8px; font-size:13px; color:#475569; text-decoration:none; background:#fff; font-weight:600;">Cancel</a>
+                        <button type="submit" style="padding:8px 18px; background:#8B1528; color:#fff; border:none; border-radius:8px; font-size:13px; font-weight:700; cursor:pointer;">Create Block</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    <?php endif; ?>
 </body>
 </html>

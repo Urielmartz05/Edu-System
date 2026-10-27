@@ -370,6 +370,28 @@
             return $block ?: null;
         }
 
+        // Update the title/name of a syllabus module block
+        public function updateBlockName($blockId, $blockName) {
+
+            $blockId = (int)$blockId;
+            $blockName = trim($blockName);
+            $connection = $this->connection;
+
+            if ($blockId <= 0 || empty($blockName)) {
+                return false;
+            }
+
+            $sql = "UPDATE blocks SET block_name = ? WHERE id = ?";
+            $stmt = $connection->prepare($sql);
+            $stmt->bind_param("si", $blockName, $blockId);
+
+            $success = $stmt->execute();
+            $stmt->close();
+
+            return $success;
+
+        }
+
         public function updateBlockTeacher($blockId, $teacherId, $courseId) {
             $blockId = (int)$blockId;
             $teacherId = (int)$teacherId;

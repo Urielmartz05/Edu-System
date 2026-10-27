@@ -15,10 +15,9 @@
 <header class="main-header">
     <nav>
         <div class="logo">
-            <div class="school-brand" title="Edu-System Academic Portal">
-                <span class="school-brand-title">Edu-System</span>
-                <span class="school-brand-pill">PORTAL</span>
-            </div>
+            <a href="/index.php" class="school-brand" title="EduX Academic Portal">
+                <img src="/resources/images/Edux.png" alt="EduX" class="school-brand-logo">
+            </a>
         </div>
 
         <div class="more-info">

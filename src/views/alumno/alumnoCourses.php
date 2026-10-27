@@ -33,7 +33,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Course Modules · Edu-System</title>
+    <title>Course Modules · EduX</title>
     <link rel="stylesheet" href="alumnoCourses.css">
 </head>
 <body>

@@ -54,6 +54,121 @@
             return $success ? $insertId : false;
         }
 
+        // Update an existing assignment
+        public function updateAssignment($assignmentId, $blockId, $title, $description, $maxScore, $dueDate, $filePath = null, $teacherId = null, $clearFile = false) {
+
+            $assignmentId = (int)$assignmentId;
+            $blockId = (int)$blockId;
+            $title = trim($title);
+            $description = trim($description);
+            $maxScore = (float)$maxScore;
+            $connection = $this->connection;
+
+            if ($assignmentId <= 0 || $blockId <= 0 || $title === '' || $maxScore <= 0 || $maxScore > 999.99 || !is_finite($maxScore) || strtotime($dueDate) === false) {
+                return false;
+            }
+
+            // Verify assignment exists and teacher owns it (if teacherId provided)
+            $sqlCheck = "SELECT id, course_id, teacher_id, file_path FROM assignments WHERE id = ?";
+            $checkStmt = $connection->prepare($sqlCheck);
+            $checkStmt->bind_param("i", $assignmentId);
+            $checkStmt->execute();
+            $assignment = $checkStmt->get_result()->fetch_assoc();
+            $checkStmt->close();
+
+            if (!$assignment) {
+                return false;
+            }
+
+            if ($teacherId !== null && (int)$assignment['teacher_id'] !== (int)$teacherId) {
+                return false;
+            }
+
+            // Verify block belongs to the assignment's course
+            $courseId = (int)$assignment['course_id'];
+            $blockCheck = $connection->prepare("SELECT id FROM blocks WHERE id = ? AND course_id = ?");
+            $blockCheck->bind_param("ii", $blockId, $courseId);
+            $blockCheck->execute();
+            $validBlock = ($blockCheck->get_result()->num_rows === 1);
+            $blockCheck->close();
+
+            if (!$validBlock) {
+                return false;
+            }
+
+            // Consistency check: max_score cannot be lower than the highest score already awarded
+            $highestScore = $this->getMaxGradedScore($assignmentId);
+            if ($highestScore !== null && $maxScore < $highestScore) {
+                return false;
+            }
+
+            $dueDateFormatted = date('Y-m-d H:i:s', strtotime($dueDate));
+
+            if ($filePath !== null) {
+                // Delete old file if exists and different
+                if (!empty($assignment['file_path']) && $assignment['file_path'] !== $filePath) {
+                    $oldFile = realpath(__DIR__ . '/../../../' . $assignment['file_path']);
+                    $root = realpath(__DIR__ . '/../../../resources/assignments');
+                    if ($root && $oldFile && str_starts_with($oldFile, $root . DIRECTORY_SEPARATOR) && is_file($oldFile)) {
+                        @unlink($oldFile);
+                    }
+                }
+                $sql = "UPDATE assignments
+                        SET block_id = ?, title = ?, description = ?, max_score = ?, due_date = ?, file_path = ?
+                        WHERE id = ?";
+                $stmt = $connection->prepare($sql);
+                $stmt->bind_param("issdssi", $blockId, $title, $description, $maxScore, $dueDateFormatted, $filePath, $assignmentId);
+            } elseif ($clearFile) {
+                if (!empty($assignment['file_path'])) {
+                    $oldFile = realpath(__DIR__ . '/../../../' . $assignment['file_path']);
+                    $root = realpath(__DIR__ . '/../../../resources/assignments');
+                    if ($root && $oldFile && str_starts_with($oldFile, $root . DIRECTORY_SEPARATOR) && is_file($oldFile)) {
+                        @unlink($oldFile);
+                    }
+                }
+                $sql = "UPDATE assignments
+                        SET block_id = ?, title = ?, description = ?, max_score = ?, due_date = ?, file_path = NULL
+                        WHERE id = ?";
+                $stmt = $connection->prepare($sql);
+                $stmt->bind_param("issdsi", $blockId, $title, $description, $maxScore, $dueDateFormatted, $assignmentId);
+            } else {
+                $sql = "UPDATE assignments
+                        SET block_id = ?, title = ?, description = ?, max_score = ?, due_date = ?
+                        WHERE id = ?";
+                $stmt = $connection->prepare($sql);
+                $stmt->bind_param("issdsi", $blockId, $title, $description, $maxScore, $dueDateFormatted, $assignmentId);
+            }
+
+            $success = $stmt->execute();
+            $stmt->close();
+
+            return $success;
+
+        }
+
+        // Get highest score currently awarded to a student for this assignment
+        public function getMaxGradedScore($assignmentId) {
+
+            $assignmentId = (int)$assignmentId;
+            $connection = $this->connection;
+
+            if ($assignmentId <= 0) {
+                return null;
+            }
+
+            $sql = "SELECT MAX(score) AS highest_score FROM assignment_submissions WHERE assignment_id = ? AND score IS NOT NULL";
+            $stmt = $connection->prepare($sql);
+            $stmt->bind_param("i", $assignmentId);
+            $stmt->execute();
+
+            $result = $stmt->get_result();
+            $row = $result->fetch_assoc();
+            $stmt->close();
+
+            return ($row && $row['highest_score'] !== null) ? (float)$row['highest_score'] : null;
+
+        }
+
         // Retrieve assignments created by a specific teacher with submission counters
         public function getTeacherAssignments($teacherId, $courseId = null) {
 

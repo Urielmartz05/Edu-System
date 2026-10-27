@@ -59,7 +59,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Faculty Gradebook Matrix · Edu-System</title>
+    <title>Faculty Gradebook Matrix · EduX</title>
     <link rel="stylesheet" href="ponenteGrades.css">
 </head>
 <body>

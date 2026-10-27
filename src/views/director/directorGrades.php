@@ -77,7 +77,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Department Academic Performance · Edu-System</title>
+    <title>Department Academic Performance · EduX</title>
     <link rel="stylesheet" href="directorGrades.css">
 </head>
 <body>

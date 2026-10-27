@@ -47,6 +47,18 @@
         });
     }
 
+    // Resolve block to rename if modal triggered
+    $renameBlockId = (int)($_GET['rename_block_id'] ?? 0);
+    $renameBlock = null;
+    if ($renameBlockId > 0) {
+        foreach ($blocks as $mb) {
+            if ((int)$mb['id'] === $renameBlockId && !empty($mb['is_my_block'])) {
+                $renameBlock = $mb;
+                break;
+            }
+        }
+    }
+
     // Student roster search and status filtering (Pure PHP)
     $studentQuery = trim($_GET['student_query'] ?? '');
     $studentStatus = trim($_GET['student_status'] ?? '');
@@ -209,7 +221,11 @@
                                 <?php endif; ?>
 
                                 <div class="toolbar-course-actions" style="display:flex; align-items:center; gap:8px;">
-                                    <a href="ponenteAssignments.php?action=new&new_course_id=<?php echo $courseId; ?>" class="btn-create-task" style="display:inline-flex; align-items:center; gap:6px; padding:8px 14px; background:#8B1528; color:#ffffff; font-size:12.5px; font-weight:600; text-decoration:none; border-radius:8px;" title="Publish coursework assignment for this course">
+                                    <a href="ponenteCourseContent.php?course_id=<?php echo $courseId; ?>&tab=modules&add_block=1" class="btn-create-task" style="display:inline-flex; align-items:center; gap:6px; padding:8px 16px; background:#8B1528; color:#ffffff; font-size:13px; font-weight:700; text-decoration:none; border-radius:8px; box-shadow:0 2px 4px rgba(139,21,40,0.25);" title="Create new syllabus block">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                        <span>Add Block</span>
+                                    </a>
+                                    <a href="ponenteAssignments.php?action=new&new_course_id=<?php echo $courseId; ?>" class="btn-create-task" style="display:inline-flex; align-items:center; gap:6px; padding:8px 14px; background:#1e293b; color:#ffffff; font-size:12.5px; font-weight:600; text-decoration:none; border-radius:8px;" title="Publish coursework assignment for this course">
                                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                                         <span>Add Assignment</span>
                                     </a>
@@ -253,6 +269,20 @@
                                                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
                                                         <span>Attach Link</span>
                                                     </a>
+                                                    <a href="ponenteCourseContent.php?course_id=<?php echo $courseId; ?>&tab=modules&rename_block_id=<?php echo $blockId; ?>" class="btn-add-file-block" style="text-decoration:none; background:#f0fdfa; color:#0f766e; border-color:#99f6e4;" onclick="event.stopPropagation();" title="Edit / Rename this module">
+                                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                                                        <span>Edit Name</span>
+                                                    </a>
+                                                    <form method="POST" action="../../controllers/admin/manageCourseActions.php" style="display:inline; margin:0;" onclick="event.stopPropagation();" onsubmit="event.stopPropagation(); return confirm('Delete this block and all attached files permanently?');">
+                                                        <?php echo csrfField(); ?>
+                                                        <input type="hidden" name="action" value="delete_block">
+                                                        <input type="hidden" name="block_id" value="<?php echo (int)$blockId; ?>">
+                                                        <input type="hidden" name="course_id" value="<?php echo (int)$courseId; ?>">
+                                                        <button type="submit" class="btn-add-file-block" style="background:#ffffff; color:#dc2626; border:1px solid #fca5a5; cursor:pointer; font-weight:600;" title="Delete this block">
+                                                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                                                            <span>Delete Block</span>
+                                                        </button>
+                                                    </form>
                                                 </div>
                                             </summary>
 
@@ -334,7 +364,13 @@
                                         </details>
                                     <?php endforeach; ?>
                                 <?php else: ?>
-                                    <div class="empty-state">No direct instruction modules match your query in this course.</div>
+                                    <div class="empty-state" style="text-align:center; padding:36px 20px;">
+                                        <p style="margin-bottom:12px; color:#64748b; font-size:14px;">No syllabus blocks assigned or created yet in this course.</p>
+                                        <a href="ponenteCourseContent.php?course_id=<?php echo $courseId; ?>&tab=modules&add_block=1" style="display:inline-flex; align-items:center; gap:6px; padding:9px 18px; background:#8B1528; color:#ffffff; font-size:13px; font-weight:700; text-decoration:none; border-radius:8px;">
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                            <span>Add Block</span>
+                                        </a>
+                                    </div>
                                 <?php endif; ?>
                             </div>
                         </section>
@@ -588,6 +624,67 @@
                     <div class="modal-footer">
                         <a href="ponenteCourseContent.php?course_id=<?php echo $courseId; ?>&tab=<?php echo $activeTab; ?>" class="btn-cancel-modal" style="text-decoration:none;">Cancel</a>
                         <button type="submit" class="btn-submit-modal">Attach Link</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    <?php endif; ?>
+
+    <!-- Create Block Modal (Pure PHP query parameter ?add_block=1) -->
+    <?php if (!empty($_GET['add_block'])): ?>
+        <div class="modal-backdrop" id="addBlockModal" style="display: flex;">
+            <div class="modal-dialog">
+                <div class="modal-header">
+                    <h3>Add Syllabus Block</h3>
+                    <a href="ponenteCourseContent.php?course_id=<?php echo $courseId; ?>&tab=<?php echo $activeTab; ?>" class="btn-close-modal" style="text-decoration:none;">&times;</a>
+                </div>
+                <form action="../../controllers/admin/manageBlock.php" method="POST"><?php echo csrfField(); ?>
+                    <input type="hidden" name="action" value="create_block">
+                    <input type="hidden" name="course_id" value="<?php echo $courseId; ?>">
+                    <input type="hidden" name="return_url" value="ponenteCourseContent.php?course_id=<?php echo $courseId; ?>">
+
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label for="blockNameInput">Block Title *</label>
+                            <input type="text" name="block_name" id="blockNameInput" class="form-control" placeholder="e.g. Unit 3: Advanced Architecture & Testing" maxlength="60" required>
+                            <span class="form-hint">You will be designated as the faculty instructor for this block.</span>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <a href="ponenteCourseContent.php?course_id=<?php echo $courseId; ?>&tab=<?php echo $activeTab; ?>" class="btn-cancel-modal" style="text-decoration:none;">Cancel</a>
+                        <button type="submit" class="btn-submit-modal" style="background:#8B1528;">Create Block</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    <?php endif; ?>
+
+    <!-- Rename Block Modal (Query parameter ?rename_block_id=X) -->
+    <?php if ($renameBlock): ?>
+        <div class="modal-backdrop" id="renameBlockModal" style="display: flex;">
+            <div class="modal-dialog">
+                <div class="modal-header">
+                    <h3>Edit Module Title</h3>
+                    <a href="ponenteCourseContent.php?course_id=<?php echo $courseId; ?>&tab=<?php echo $activeTab; ?>" class="btn-close-modal" style="text-decoration:none;">&times;</a>
+                </div>
+                <form action="../../controllers/admin/manageBlock.php" method="POST"><?php echo csrfField(); ?>
+                    <input type="hidden" name="action" value="rename_block">
+                    <input type="hidden" name="block_id" value="<?php echo (int)$renameBlock['id']; ?>">
+                    <input type="hidden" name="course_id" value="<?php echo $courseId; ?>">
+                    <input type="hidden" name="return_url" value="ponenteCourseContent.php?course_id=<?php echo $courseId; ?>">
+
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label for="renameBlockInput">Module Title *</label>
+                            <input type="text" name="block_name" id="renameBlockInput" class="form-control" value="<?php echo htmlspecialchars($renameBlock['block_name']); ?>" maxlength="60" required autofocus>
+                            <span class="form-hint">Update the descriptive title for this syllabus unit.</span>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <a href="ponenteCourseContent.php?course_id=<?php echo $courseId; ?>&tab=<?php echo $activeTab; ?>" class="btn-cancel-modal" style="text-decoration:none;">Cancel</a>
+                        <button type="submit" class="btn-submit-modal" style="background:#0f766e;">Save Changes</button>
                     </div>
                 </form>
             </div>

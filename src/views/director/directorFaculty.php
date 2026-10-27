@@ -30,7 +30,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Faculty & Teaching Staff · Edu-System</title>
+    <title>Faculty & Teaching Staff · EduX</title>
     <link rel="stylesheet" href="directorFaculty.css">
 </head>
 <body>

@@ -7,7 +7,7 @@
 
     $currentSidebarNav = basename($_SERVER['PHP_SELF']);
     $userName = htmlspecialchars(trim(($_SESSION['name'] ?? 'Student') . ' ' . ($_SESSION['lastname'] ?? '')));
-    $userEmail = htmlspecialchars($_SESSION['email'] ?? 'student@edu-system.com');
+    $userEmail = htmlspecialchars($_SESSION['email'] ?? 'student@edux.com');
 ?>
 
 <aside>

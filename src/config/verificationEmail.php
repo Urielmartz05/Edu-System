@@ -14,11 +14,11 @@ function sendVerificationEmail($email, $token, ?callable $transport = null) {
         return false;
     }
     $link = $baseUrl . '/src/controllers/verificar/verificar.php?token=' . rawurlencode($token);
-    $body = "Confirm your Edu-System email address by opening this link:\n\n" . $link
+    $body = "Confirm your EduX email address by opening this link:\n\n" . $link
         . "\n\nIf you did not create this account, ignore this message.\n";
     try {
         $transport ??= 'mail';
-        $sent = @$transport($email, 'Confirm your Edu-System email address', $body, [
+        $sent = @$transport($email, 'Confirm your EduX email address', $body, [
             'From' => $from,
             'Content-Type' => 'text/plain; charset=UTF-8'
         ]);

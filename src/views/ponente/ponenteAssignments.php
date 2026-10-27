@@ -16,7 +16,7 @@
     $reviewId = isset($_GET['review_id']) ? (int)$_GET['review_id'] : null;
     $search = trim($_GET['search'] ?? '');
     $assignmentListUrl = $userRole === 1 ? '/src/views/admin/adminAssignments.php' : 'ponenteAssignments.php';
-    if ($userRole === 1 && $reviewId <= 0) {
+    if ($userRole === 1 && $reviewId <= 0 && $action !== 'edit') {
         header('Location: ' . $assignmentListUrl);
         exit;
     }
@@ -61,7 +61,7 @@
             $submissions = $assignmentModel->getAssignmentSubmissions($reviewId);
         }
     }
-    if ($userRole === 1 && !$reviewAssignment) {
+    if ($userRole === 1 && !$reviewAssignment && $action !== 'edit') {
         $_SESSION['flash_error'] = 'The requested assignment could not be found.';
         header('Location: ' . $assignmentListUrl);
         exit;
@@ -77,6 +77,26 @@
         }
     }
 
+    // If edit view is active, retrieve assignment details and target course blocks
+    $editAssignment = null;
+    $editCourseBlocks = [];
+    $editId = isset($_GET['edit_id']) ? (int)$_GET['edit_id'] : 0;
+    if ($action === 'edit' && $editId > 0) {
+        $editAssignment = $assignmentModel->getAssignmentDetails($editId);
+        if ($editAssignment && $userRole !== 1 && (int)$editAssignment['teacher_id'] !== $teacherId) {
+            $editAssignment = null;
+            $_SESSION['flash_error'] = 'You are not authorized to edit this assignment.';
+        }
+        if ($editAssignment) {
+            $editHighestGraded = $assignmentModel->getMaxGradedScore($editId);
+            $editCourseId = (int)$editAssignment['course_id'];
+            $editCourseBlocks = $teacherCoursesModel->getCourseBlocksWithFiles($editCourseId, ($userRole === 1 ? (int)$editAssignment['teacher_id'] : $teacherId));
+            if ($userRole !== 1) {
+                $editCourseBlocks = array_filter($editCourseBlocks, fn($block) => !empty($block['is_my_block']) || (int)$block['id'] === (int)$editAssignment['block_id']);
+            }
+        }
+    }
+
     $flashSuccess = $_SESSION['flash_success'] ?? null;
     $flashError = $_SESSION['flash_error'] ?? null;
     unset($_SESSION['flash_success'], $_SESSION['flash_error']);
@@ -86,7 +106,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo $userRole === 1 ? 'Administrative Assignment Review' : 'Faculty Assignments & Submissions'; ?> · Edu-System</title>
+    <title><?php echo $userRole === 1 ? 'Administrative Assignment Review' : 'Faculty Assignments & Submissions'; ?> · EduX</title>
     <link rel="stylesheet" href="ponenteAssignments.css">
 </head>
 <body>
@@ -229,6 +249,95 @@
                             <div class="form-actions-row">
                                 <button type="submit" class="btn-action-primary">Publish Assignment</button>
                                 <a href="ponenteAssignments.php" class="btn-cancel">Discard</a>
+                            </div>
+                        </form>
+                    </section>
+                <?php endif; ?>
+
+                <!-- Assignment Edit Panel (Triggered via ?action=edit&edit_id=X) -->
+                <?php if ($action === 'edit' && $editAssignment): ?>
+                    <section class="panel form-panel">
+                        <div class="panel-head">
+                            <div>
+                                <span class="module-chip" style="margin-bottom:8px; display:inline-block;"><?php echo htmlspecialchars($editAssignment['course_name'] ?? ''); ?></span>
+                                <h2>Edit Coursework Assignment</h2>
+                                <p>Modify the assignment parameters, instructions, due date, or attached rubric file.</p>
+                            </div>
+                            <a href="<?php echo $userRole === 1 ? htmlspecialchars($assignmentListUrl) : 'ponenteAssignments.php' . (!empty($editAssignment['course_id']) ? '?course_id=' . (int)$editAssignment['course_id'] : ''); ?>" class="btn-secondary-link">Cancel</a>
+                        </div>
+
+                        <form method="POST" action="../../controllers/teacher/manageAssignments.php" enctype="multipart/form-data" class="assignment-create-form"><?php echo csrfField(); ?>
+                            <input type="hidden" name="action" value="update">
+                            <input type="hidden" name="assignment_id" value="<?php echo (int)$editAssignment['id']; ?>">
+
+                            <div class="form-grid-2">
+                                <div class="form-group">
+                                    <label for="edit_block_id">Course Module / Syllabus Block *</label>
+                                    <select id="edit_block_id" name="block_id" class="select-control" required>
+                                        <option value="">-- Choose Module --</option>
+                                        <?php foreach ($editCourseBlocks as $block): ?>
+                                            <option value="<?php echo $block['id']; ?>" <?php echo (int)$block['id'] === (int)$editAssignment['block_id'] ? 'selected' : ''; ?>>
+                                                <?php echo htmlspecialchars($block['block_name']); ?> <?php echo !empty($block['is_my_block']) ? '(My Module)' : ''; ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="edit_title">Assignment Title *</label>
+                                    <input type="text" id="edit_title" name="title" value="<?php echo htmlspecialchars($editAssignment['title']); ?>" required placeholder="e.g. Midterm Research Essay" class="text-input">
+                                </div>
+                            </div>
+
+                            <div class="form-grid-2">
+                                <div class="form-group">
+                                    <label for="edit_max_score">Maximum Score (Points) *</label>
+                                    <input type="number" id="edit_max_score" name="max_score" step="0.01" min="<?php echo ($editHighestGraded !== null) ? htmlspecialchars($editHighestGraded) : '1'; ?>" max="999.99" value="<?php echo htmlspecialchars($editAssignment['max_score']); ?>" required class="text-input">
+                                    <?php if ($editHighestGraded !== null): ?>
+                                        <p style="font-size:11.5px; color:#b45309; margin-top:5px; margin-bottom:0; display:flex; align-items:center; gap:4px;">
+                                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                                            <span>Minimum allowed: <strong><?php echo number_format($editHighestGraded, 1); ?> pts</strong> (highest score already awarded to a student).</span>
+                                        </p>
+                                    <?php endif; ?>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="edit_due_date">Due Date and Time *</label>
+                                    <input type="datetime-local" id="edit_due_date" name="due_date" value="<?php echo date('Y-m-d\TH:i', strtotime($editAssignment['due_date'])); ?>" required class="text-input">
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="edit_description">Instructions and Evaluation Guidelines</label>
+                                <textarea id="edit_description" name="description" rows="5" placeholder="Detail the objectives, submission requirements, format, and criteria..." class="textarea-input"><?php echo htmlspecialchars($editAssignment['description']); ?></textarea>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="edit_attachment">Prompt / Rubric Document (Optional - Max 25MB)</label>
+                                <?php if (!empty($editAssignment['file_path'])): ?>
+                                    <div style="margin-bottom:10px; padding:10px 14px; background:#f1f5f9; border:1px solid #e2e8f0; border-radius:8px; display:flex; align-items:center; justify-content:space-between; gap:12px;">
+                                        <div style="display:flex; align-items:center; gap:8px;">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8B1528" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                                            <span style="font-size:13px; color:#334155;"><strong>Current Attachment:</strong> <a <?php echo resourceLinkAttributes($editAssignment['file_path'], 'assignment', $editAssignment['id']); ?> target="_blank" download style="color:#8B1528; text-decoration:underline; font-weight:600;"><?php echo htmlspecialchars(basename($editAssignment['file_path'])); ?></a></span>
+                                        </div>
+                                        <label style="display:flex; align-items:center; gap:6px; font-size:12.5px; color:#dc2626; cursor:pointer; margin:0; font-weight:500;">
+                                            <input type="checkbox" name="clear_attachment" value="1"> Remove current file
+                                        </label>
+                                    </div>
+                                <?php endif; ?>
+                                <div class="file-upload-box" style="border:2px dashed #cbd5e1; border-radius:10px; padding:14px; background:#f8fafc; transition:all 0.2s ease;">
+                                    <input type="file" id="edit_attachment" name="attachment" class="file-input" accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,.zip,.rar,.png,.jpg,.jpeg" style="display:block; width:100%; cursor:pointer;">
+                                    <div id="edit-file-selected-status" style="display:none; margin-top:8px; padding:6px 12px; background:#f0fdf4; border:1px solid #86efac; border-radius:6px; font-size:12px; color:#166534; align-items:center; gap:6px;">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                                        <span><strong>Selected:</strong> <span id="edit-file-name-display"></span> (<span id="edit-file-size-display"></span>)</span>
+                                    </div>
+                                    <p style="font-size:11.5px; color:#64748b; margin-top:6px; margin-bottom:0;">Upload a file to replace the existing prompt document. Supported formats: PDF, Word, PowerPoint, Excel, Images, ZIP (max 25MB).</p>
+                                </div>
+                            </div>
+
+                            <div class="form-actions-row">
+                                <button type="submit" class="btn-action-primary">Save Changes</button>
+                                <a href="<?php echo $userRole === 1 ? htmlspecialchars($assignmentListUrl) : 'ponenteAssignments.php' . (!empty($editAssignment['course_id']) ? '?course_id=' . (int)$editAssignment['course_id'] : ''); ?>" class="btn-cancel">Discard</a>
                             </div>
                         </form>
                     </section>
@@ -436,6 +545,9 @@
                                             </td>
                                             <td style="text-align: right;">
                                                 <div class="row-actions-group">
+                                                    <a href="ponenteAssignments.php?action=edit&edit_id=<?php echo $a['id']; ?>" class="btn-edit-action" title="Edit Assignment">
+                                                        Edit
+                                                    </a>
                                                     <a href="ponenteAssignments.php?review_id=<?php echo $a['id']; ?>" class="btn-review-action">
                                                         Review Submissions
                                                     </a>
@@ -457,12 +569,13 @@
         </main>
     </div>
     <script>
-        const fileInput = document.getElementById('attachment');
-        if (fileInput) {
-            fileInput.addEventListener('change', function() {
-                const statusDiv = document.getElementById('file-selected-status');
-                const nameDisplay = document.getElementById('file-name-display');
-                const sizeDisplay = document.getElementById('file-size-display');
+        function bindFileInput(inputId, statusId, nameId, sizeId) {
+            const input = document.getElementById(inputId);
+            if (!input) return;
+            input.addEventListener('change', function() {
+                const statusDiv = document.getElementById(statusId);
+                const nameDisplay = document.getElementById(nameId);
+                const sizeDisplay = document.getElementById(sizeId);
                 if (this.files && this.files.length > 0) {
                     const file = this.files[0];
                     const sizeMb = (file.size / (1024 * 1024)).toFixed(2);
@@ -480,6 +593,8 @@
                 }
             });
         }
+        bindFileInput('attachment', 'file-selected-status', 'file-name-display', 'file-size-display');
+        bindFileInput('edit_attachment', 'edit-file-selected-status', 'edit-file-name-display', 'edit-file-size-display');
     </script>
 </body>
 </html>
