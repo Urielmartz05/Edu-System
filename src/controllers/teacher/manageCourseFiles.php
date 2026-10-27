@@ -5,24 +5,22 @@
     // ==========================================
 
     require_once __DIR__ . "/../auth/check_auth.php";
+    requireValidPost();
+    requireRole([1, 2, 3]);
     require_once __DIR__ . "/../../models/teacherModels/teacherCoursesModel.php";
 
     $user = getLoggedUser();
     $teacherId = (int)($user['id'] ?? 0);
-
-    if ($teacherId <= 0) {
-        header("Location: ../../views/ponente/ponente.php");
-        exit;
-    }
+    $userRole = (int)($user['role'] ?? 0);
 
     $teacherCoursesModel = new TeacherCourses();
-    $action = $_REQUEST['action'] ?? '';
-    $courseId = (int)($_REQUEST['course_id'] ?? 0);
+    $action = $_POST['action'] ?? ($_REQUEST['action'] ?? '');
+    $courseId = (int)($_POST['course_id'] ?? ($_REQUEST['course_id'] ?? 0));
 
     // ==========================================
     // ACTION: UPLOAD LEARNING RESOURCE
     // ==========================================
-    if ($action === 'upload' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    if ($action === 'upload') {
         $blockId = (int)($_POST['block_id'] ?? 0);
         $fileTitle = trim($_POST['file_title'] ?? '');
 
@@ -65,7 +63,7 @@
         // Sanitize file title and create unique physical storage path
         $displayTitle = !empty($fileTitle) ? ($fileTitle . '.' . $ext) : $file['name'];
         $cleanBaseName = preg_replace('/[^a-zA-Z0-9_-]/', '_', pathinfo($displayTitle, PATHINFO_FILENAME));
-        $storedFileName = $cleanBaseName . '_' . time() . '.' . $ext;
+        $storedFileName = $cleanBaseName . '_' . bin2hex(random_bytes(12)) . '.' . $ext;
 
         $targetDir = __DIR__ . '/../../../resources/documents/';
         if (!is_dir($targetDir)) {
@@ -103,7 +101,7 @@
             exit;
         }
 
-        $deleted = $teacherCoursesModel->deleteFileFromBlock($teacherId, $fileId);
+        $deleted = $teacherCoursesModel->deleteFileFromBlock($teacherId, $fileId, $userRole);
         if ($deleted) {
             $_SESSION['flash_success'] = "Learning resource has been removed successfully.";
         } else {

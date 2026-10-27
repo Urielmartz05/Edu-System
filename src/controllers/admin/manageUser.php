@@ -5,14 +5,9 @@
     // ==========================================
 
     require_once __DIR__ . '/../auth/check_auth.php';
+    requireValidPost();
+    requireRole([1]);
     $user = getLoggedUser();
-
-    // Verify Administrator role authorization (Role 1)
-    $roleId = (int)($user['role'] ?? ($_SESSION['role_id'] ?? 0));
-    if ($roleId !== 1) {
-        header("Location: ../../views/general/403.php");
-        exit;
-    }
 
     require_once __DIR__ . '/../../models/adminModels/adminUsersModel.php';
     $usersModel = new AdminUsers();
@@ -55,6 +50,7 @@
             $role = (int)($_POST['role'] ?? 0);
             $verified = isset($_POST['verified']) ? (int)$_POST['verified'] : 1;
             $departmentId = !empty($_POST['department_id']) ? (int)$_POST['department_id'] : null;
+            $courseId = !empty($_POST['course_id']) ? (int)$_POST['course_id'] : null;
 
             if (empty($name) || empty($email) || $role <= 0) {
                 $_SESSION['flash_error'] = "First name, institutional email, and academic role are required.";
@@ -62,7 +58,7 @@
                 exit;
             }
 
-            $result = $usersModel->updateUser($userId, $name, $lastname, $email, $role, $verified, $departmentId);
+            $result = $usersModel->updateUser($userId, $name, $lastname, $email, $role, $verified, $departmentId, $courseId);
             if ($result['success']) {
                 $_SESSION['flash_success'] = "Profile for user \"{$name} {$lastname}\" (#{$userId}) updated successfully.";
             } else {

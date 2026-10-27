@@ -5,8 +5,8 @@
         session_start();
     }
 
-    $currentPage = basename($_SERVER['PHP_SELF']);
-    $userName = htmlspecialchars(($_SESSION['name'] ?? 'Faculty') . ' ' . ($_SESSION['lastname'] ?? ''));
+    $currentSidebarNav = basename($_SERVER['PHP_SELF']);
+    $userName = htmlspecialchars(trim(($_SESSION['name'] ?? 'Faculty') . ' ' . ($_SESSION['lastname'] ?? '')));
     $userEmail = htmlspecialchars($_SESSION['email'] ?? 'instructor@edu-system.com');
 ?>
 
@@ -28,18 +28,34 @@
 
         <ul>
             <li class="dashboard-option">
-                <a href="/src/views/ponente/ponente.php" class="sidebar-link">
-                    <div class="option <?php echo ($currentPage == 'ponente.php') ? 'active' : ''; ?>">
+                <a href="/src/views/ponente/ponente.php" class="sidebar-link" title="Dashboard">
+                    <div class="option <?php echo ($currentSidebarNav == 'ponente.php') ? 'active' : ''; ?>">
                         <img src="/resources/images/Home.png" alt="Dashboard" class="icon">
                         <p>Dashboard</p>
                     </div>
                 </a>
             </li>
             <li class="courses-option">
-                <a href="/src/views/ponente/ponenteCourses.php" class="sidebar-link">
-                    <div class="option <?php echo in_array($currentPage, ['ponenteCourses.php', 'ponenteCourseContent.php']) ? 'active' : ''; ?>">
+                <a href="/src/views/ponente/ponenteCourses.php" class="sidebar-link" title="My Courses">
+                    <div class="option <?php echo in_array($currentSidebarNav, ['ponenteCourses.php', 'ponenteCourseContent.php']) ? 'active' : ''; ?>">
                         <img src="/resources/images/Lesson.png" alt="My courses" class="icon">
                         <p>My courses</p>
+                    </div>
+                </a>
+            </li>
+            <li class="assignments-option">
+                <a href="/src/views/ponente/ponenteAssignments.php" class="sidebar-link" title="Assignments">
+                    <div class="option <?php echo ($currentSidebarNav == 'ponenteAssignments.php') ? 'active' : ''; ?>">
+                        <img src="/resources/images/Assignments.svg" alt="Assignments" class="icon">
+                        <p>Assignments</p>
+                    </div>
+                </a>
+            </li>
+            <li class="grades-option">
+                <a href="/src/views/ponente/ponenteGrades.php" class="sidebar-link" title="Gradebook">
+                    <div class="option <?php echo ($currentSidebarNav == 'ponenteGrades.php') ? 'active' : ''; ?>">
+                        <img src="/resources/images/Grades.svg" alt="Grades" class="icon">
+                        <p>Grades</p>
                     </div>
                 </a>
             </li>

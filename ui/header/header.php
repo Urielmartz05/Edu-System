@@ -15,10 +15,10 @@
 <header class="main-header">
     <nav>
         <div class="logo">
-            <a href="/index.php" class="school-brand" title="Edu-System Academic Portal">
+            <div class="school-brand" title="Edu-System Academic Portal">
                 <span class="school-brand-title">Edu-System</span>
                 <span class="school-brand-pill">PORTAL</span>
-            </a>
+            </div>
         </div>
 
         <div class="more-info">
@@ -26,6 +26,7 @@
             if (isset($_SESSION['user_id'])) {
                 echo "<div class='user-session'>
                         <span class='user-role-badge'>" . htmlspecialchars(ucfirst(strtolower($roleType ?: 'User'))) . "</span>
+                        <a href='/src/views/profile/profile.php' class='profile-header-link' title='Account settings and password change'>Profile</a>
                         <a href='/src/controllers/logout/logout.php' class='logout-link' title='Sign out of your session'>Log out</a>
                       </div>";
             } else {

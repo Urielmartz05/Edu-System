@@ -1,10 +1,20 @@
 <?php
     require_once __DIR__ . "/../../controllers/auth/check_auth.php";
+    requireRole([4]);
     require_once __DIR__ . "/../../models/studentModels/studentEnrollmentModel.php";
     $user = getLoggedUser();
 
     $enrollmentModel = new StudentEnrollment();
     $enrolledCourses = $enrollmentModel->getEnrolledCourses($user['id']);
+
+    // Pure PHP search filter
+    $search = trim($_GET['search'] ?? '');
+    if (!empty($search)) {
+        $enrolledCourses = array_filter($enrolledCourses, function($c) use ($search) {
+            return stripos($c['course_name'] ?? '', $search) !== false
+                || stripos($c['department'] ?? '', $search) !== false;
+        });
+    }
 
     $flashSuccess = $_SESSION['flash_success'] ?? null;
     $flashError = $_SESSION['flash_error'] ?? null;
@@ -25,13 +35,6 @@
     <div class="workspace">
         <main>
             <div id="page-content">
-
-                <!-- Breadcrumbs -->
-                <nav class="breadcrumb">
-                    <a href="alumnoDashboard.php">Dashboard</a>
-                    <span class="breadcrumb-separator">/</span>
-                    <span>My Courses</span>
-                </nav>
 
                 <!-- Flash Alerts -->
                 <?php if (!empty($flashSuccess)): ?>
@@ -68,18 +71,18 @@
                     </div>
 
                     <div class="filters-bar">
-                        <div class="search-wrap">
+                        <form method="GET" action="misCursos.php" class="search-wrap" style="width:100%; max-width:420px; display:flex; align-items:center;">
                             <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                            <input type="search" class="search-input" id="courseSearch" placeholder="Search by course name or department..." onkeyup="filterCourses()">
-                        </div>
+                            <input type="search" name="search" class="search-input" id="courseSearch" placeholder="Search by course name or department..." value="<?php echo htmlspecialchars($search); ?>">
+                        </form>
                     </div>
 
                     <div class="courses-grid" id="coursesGrid">
                         <?php if (!empty($enrolledCourses)): ?>
-                            <?php foreach ($enrolledCourses as $course): 
+                            <?php foreach ($enrolledCourses as $course):
                                 $prog = (float)($course['progress'] ?? 0);
                             ?>
-                                <article class="course-card" onclick="window.location.href='../../controllers/alumno/selectCourse.php?course_id=<?php echo (int)$course['id']; ?>&target=courses'" tabindex="0">
+                                <a href="../../controllers/alumno/selectCourse.php?course_id=<?php echo (int)$course['id']; ?>&target=courses" class="course-card" style="text-decoration:none; color:inherit; display:flex;">
                                     <div class="card-top">
                                         <span class="badge-dept"><?php echo htmlspecialchars($course['department'] ?? 'General'); ?></span>
                                         <span class="badge-status active">
@@ -117,7 +120,7 @@
                                             <svg class="arrow-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
                                         </span>
                                     </div>
-                                </article>
+                                </a>
                             <?php endforeach; ?>
                         <?php else: ?>
                             <div class="empty-state">
@@ -134,17 +137,5 @@
             </div>
         </main>
     </div>
-
-    <script>
-        function filterCourses() {
-            const query = (document.getElementById('courseSearch').value || '').toLowerCase().trim();
-            const cards = document.querySelectorAll('#coursesGrid .course-card');
-
-            cards.forEach(card => {
-                const text = card.textContent.toLowerCase();
-                card.style.display = text.includes(query) ? '' : 'none';
-            });
-        }
-    </script>
 </body>
 </html>

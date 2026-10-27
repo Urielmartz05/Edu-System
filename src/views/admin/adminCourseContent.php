@@ -1,14 +1,6 @@
 <?php
     require_once __DIR__ . '/../../controllers/auth/check_auth.php';
-    $user = getLoggedUser();
-
-    // Verify administrator authorization (role 1)
-    $roleId = (int)($user['role'] ?? ($_SESSION['role_id'] ?? 0));
-    if ($roleId !== 1) {
-        header("Location: ../general/403.php");
-        exit;
-    }
-
+    requireRole([1]);
     require_once __DIR__ . '/../../models/adminModels/adminCoursesModel.php';
     $coursesModel = new AdminCourses();
 
@@ -50,7 +42,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo htmlspecialchars($course['course_name']); ?> · Course Inspector · Edu-System</title>
-    <link rel="stylesheet" href="courseContent.css">
+    <link rel="stylesheet" href="adminCourseContent.css">
 </head>
 <body>
     <?php include __DIR__ . '/../../../ui/header/header.php'; ?>
@@ -59,14 +51,6 @@
     <div class="workspace">
         <main>
             <div id="page-content">
-                <!-- Navigation Breadcrumbs -->
-                <nav class="breadcrumb">
-                    <a href="adminDashboard.php">Dashboard</a>
-                    <span class="breadcrumb-separator">/</span>
-                    <a href="adminCourses.php">Course Catalog</a>
-                    <span class="breadcrumb-separator">/</span>
-                    <span class="breadcrumb-current"><?php echo htmlspecialchars($course['course_name']); ?></span>
-                </nav>
 
                 <!-- Page Header Hero -->
                 <section class="page-heading">
@@ -75,12 +59,16 @@
                         <h1><?php echo htmlspecialchars($course['course_name']); ?></h1>
                         <p class="subtitle">Administrative oversight for course modules, assigned faculty, digital learning resources, and enrolled student rosters.</p>
                     </div>
-                    <div class="actions">
-                        <a href="adminCourses.php" class="btn btn-secondary">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
-                            <span>Back to Catalog</span>
-                        </a>
-                        <a href="../../controllers/admin/toggleCourseStatus.php?course_id=<?php echo urlencode($course['id']); ?>&return_url=adminCourseContent.php" class="btn <?php echo $isPublished ? 'btn-secondary' : 'btn-primary'; ?>" title="Toggle publication status">
+                </section>
+
+                <!-- Panel Toolbar for Course Actions -->
+                <div class="panel-toolbar" style="margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+                    <a href="adminCourses.php" class="btn btn-secondary" style="text-decoration:none;">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+                        <span>Back to Catalog</span>
+                    </a>
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <form method="POST" action="../../controllers/admin/toggleCourseStatus.php?course_id=<?php echo urlencode($course['id']); ?>&return_url=adminCourseContent.php" style="display:inline;"><?php echo csrfField(); ?><button type="submit"  class="btn <?php echo $isPublished ? 'btn-secondary' : 'btn-primary'; ?>" title="Toggle publication status">
                             <?php if ($isPublished): ?>
                                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="10" y1="15" x2="10" y2="9"/><line x1="14" y1="15" x2="14" y2="9"/></svg>
                                 <span>Set to Review</span>
@@ -88,13 +76,13 @@
                                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
                                 <span>Publish Course</span>
                             <?php endif; ?>
-                        </a>
-                        <a href="adminCreate.php?tab=course" class="btn btn-secondary">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                        </button></form>
+                        <a href="adminCreate.php?tab=course" class="btn btn-secondary" style="text-decoration:none;">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                             <span>Creation Hub</span>
                         </a>
                     </div>
-                </section>
+                </div>
 
                 <?php if ($flashSuccess): ?>
                     <div style="background-color: #f0fdf4; border: 1px solid #86efac; color: #15803d; padding: 14px 20px; border-radius: 10px; margin-bottom: 24px; font-size: 13px; font-weight: 500;">
@@ -169,17 +157,17 @@
                                 </div>
                                 <div style="display:flex; align-items:center; gap:10px;">
                                     <span class="counter-badge"><?php echo count($blocks); ?> Module(s)</span>
-                                    <button type="button" class="btn btn-primary" onclick="openModuleModal()" style="padding:6px 14px; font-size:12px;">
+                                    <a href="adminCourseContent.php?course_id=<?php echo (int)$course['id']; ?>&add_module=1" class="btn btn-primary" style="padding:6px 14px; font-size:12px; text-decoration:none;">
                                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                                         <span>Add Module</span>
-                                    </button>
+                                    </a>
                                 </div>
                             </div>
 
                             <div class="panel-body">
                                 <?php if (!empty($blocks)): ?>
                                     <div class="blocks-container">
-                                        <?php foreach ($blocks as $index => $b): 
+                                        <?php foreach ($blocks as $index => $b):
                                             $files = $blockFiles[$b['id']] ?? [];
                                         ?>
                                             <div class="module-card">
@@ -196,10 +184,10 @@
                                                             <span class="instructor-name"><?php echo htmlspecialchars($b['teacher_name']); ?></span>
                                                             <span class="instructor-role">Module Instructor</span>
                                                         </div>
-                                                        <a href="../../controllers/admin/manageCourseActions.php?action=delete_block&block_id=<?php echo (int)$b['id']; ?>&course_id=<?php echo (int)$course['id']; ?>" class="btn-file-action" style="color:#dc2626; border-color:#fecdd3; margin-left:10px;" onclick="return confirm('Permanently remove module &quot;<?php echo htmlspecialchars(addslashes($b['block_name'])); ?>&quot; and all attached files?');" title="Delete Module Block">
+                                                        <form method="POST" action="../../controllers/admin/manageCourseActions.php?action=delete_block&block_id=<?php echo (int)$b['id']; ?>&course_id=<?php echo (int)$course['id']; ?>" style="display:inline;"><?php echo csrfField(); ?><button type="submit"  class="btn-file-action" style="color:#dc2626; border-color:#fecdd3; margin-left:10px; text-decoration:none;" title="Delete Module Block">
                                                             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
                                                             <span>Remove</span>
-                                                        </a>
+                                                        </button></form>
                                                     </div>
                                                 </div>
 
@@ -223,7 +211,7 @@
                                                                             <span class="file-meta">Resource ID #<?php echo (int)$f['id']; ?> · Subject Module #<?php echo (int)$b['id']; ?></span>
                                                                         </div>
                                                                     </div>
-                                                                    <a href="../../../<?php echo htmlspecialchars($f['file_path']); ?>" target="_blank" class="btn-file-action">
+                                                                    <a href="../../controllers/files/downloadFile.php?file_id=<?php echo (int)$f['id']; ?>&mode=download" class="btn-file-action" title="Download Resource">
                                                                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                                                                         <span>Download</span>
                                                                     </a>
@@ -303,7 +291,7 @@
                             <div class="panel-body">
                                 <?php if (!empty($students)): ?>
                                     <div class="students-list">
-                                        <?php foreach ($students as $s): 
+                                        <?php foreach ($students as $s):
                                             $isVerified = ((int)$s['verified'] === 1);
                                         ?>
                                             <div class="student-item">
@@ -338,54 +326,41 @@
         </main>
     </div>
 
-    <!-- Add Module Modal -->
-    <div id="moduleModal" class="modal-overlay" style="display:none;">
-        <div class="modal-card">
-            <div class="modal-header">
-                <div>
-                    <h3 style="font-size:16px; font-weight:700; color:#0f172a;">Add Syllabus Module</h3>
-                    <p style="font-size:12px; color:#64748b; margin-top:2px;">Create an instructional block unit and assign an instructor.</p>
+    <!-- Add Module Modal (Pure PHP) -->
+    <?php if (!empty($_GET['add_module'])): ?>
+        <div id="moduleModal" class="modal-overlay" style="display:flex;">
+            <div class="modal-card">
+                <div class="modal-header">
+                    <div>
+                        <h3 style="font-size:16px; font-weight:700; color:#0f172a;">Add Syllabus Module</h3>
+                        <p style="font-size:12px; color:#64748b; margin-top:2px;">Create an instructional block unit and assign an instructor.</p>
+                    </div>
+                    <a href="adminCourseContent.php?course_id=<?php echo (int)$course['id']; ?>" class="btn-modal-close" style="text-decoration:none;">&times;</a>
                 </div>
-                <button type="button" class="btn-modal-close" onclick="closeModuleModal()">&times;</button>
+                <form action="../../controllers/admin/manageBlock.php" method="POST" style="margin-top:18px;"><?php echo csrfField(); ?>
+                    <input type="hidden" name="course_id" value="<?php echo (int)$course['id']; ?>">
+                    <div style="margin-bottom:16px;">
+                        <label for="block_name" style="display:block; font-size:12px; font-weight:600; color:#334155; margin-bottom:6px;">Module / Block Title *</label>
+                        <input type="text" id="block_name" name="block_name" class="modal-field" placeholder="e.g. Distributed Database Architecture" maxlength="60" required>
+                    </div>
+                    <div style="margin-bottom:20px;">
+                        <label for="teacher_id" style="display:block; font-size:12px; font-weight:600; color:#334155; margin-bottom:6px;">Appointed Faculty Instructor *</label>
+                        <select id="teacher_id" name="teacher_id" class="modal-field" required>
+                            <option value="">Select instructor...</option>
+                            <?php foreach ($teachersList as $t): ?>
+                                <option value="<?php echo (int)$t['id']; ?>">
+                                    <?php echo htmlspecialchars($t['name'] . ' ' . $t['lastname'] . ' (' . $t['email'] . ')'); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div style="display:flex; justify-content:flex-end; gap:10px;">
+                        <a href="adminCourseContent.php?course_id=<?php echo (int)$course['id']; ?>" class="btn btn-secondary" style="text-decoration:none;">Cancel</a>
+                        <button type="submit" class="btn btn-primary">Create Module</button>
+                    </div>
+                </form>
             </div>
-            <form action="../../controllers/admin/manageBlock.php" method="POST" style="margin-top:18px;">
-                <input type="hidden" name="course_id" value="<?php echo (int)$course['id']; ?>">
-                <div style="margin-bottom:16px;">
-                    <label for="block_name" style="display:block; font-size:12px; font-weight:600; color:#334155; margin-bottom:6px;">Module / Block Title *</label>
-                    <input type="text" id="block_name" name="block_name" class="modal-field" placeholder="e.g. Distributed Database Architecture" maxlength="60" required>
-                </div>
-                <div style="margin-bottom:20px;">
-                    <label for="teacher_id" style="display:block; font-size:12px; font-weight:600; color:#334155; margin-bottom:6px;">Appointed Faculty Instructor *</label>
-                    <select id="teacher_id" name="teacher_id" class="modal-field" required>
-                        <option value="">Select instructor...</option>
-                        <?php foreach ($teachersList as $t): ?>
-                            <option value="<?php echo (int)$t['id']; ?>">
-                                <?php echo htmlspecialchars($t['name'] . ' ' . $t['lastname'] . ' (' . $t['email'] . ')'); ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-                <div style="display:flex; justify-content:flex-end; gap:10px;">
-                    <button type="button" class="btn btn-secondary" onclick="closeModuleModal()">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Create Module</button>
-                </div>
-            </form>
         </div>
-    </div>
-
-    <script>
-        function openModuleModal() {
-            document.getElementById('moduleModal').style.display = 'flex';
-        }
-        function closeModuleModal() {
-            document.getElementById('moduleModal').style.display = 'none';
-        }
-        window.addEventListener('click', function(e) {
-            const modal = document.getElementById('moduleModal');
-            if (e.target === modal) {
-                closeModuleModal();
-            }
-        });
-    </script>
+    <?php endif; ?>
 </body>
 </html>

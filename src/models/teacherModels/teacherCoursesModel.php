@@ -22,7 +22,7 @@
             $teacherId = (int)$teacherId;
             $connection = $this->connection;
 
-            $sql = "SELECT 
+            $sql = "SELECT
                         c.id,
                         c.course_name,
                         COALESCE(d.department, 'General') AS department_name,
@@ -56,39 +56,6 @@
             return $courses;
         }
 
-        // Fetch students specifically enrolled in modules instructed by this teacher.
-        public function getEnrolledStudents($teacherId, $courseId) {
-
-            $teacherId = (int)$teacherId;
-            $courseId = (int)$courseId;
-            $connection = $this->connection;
-
-            $sql = "SELECT DISTINCT 
-                        u.id, 
-                        u.name, 
-                        u.lastname, 
-                        u.email
-                    FROM student s
-                    INNER JOIN users u ON u.id = s.id
-                    INNER JOIN blocks b ON b.course_id = s.course_id
-                    WHERE b.teacher_id = ? AND s.course_id = ?
-                    ORDER BY u.name ASC";
-
-            $stmt = $connection->prepare($sql);
-            $stmt->bind_param("ii", $teacherId, $courseId);
-            $stmt->execute();
-
-            $result = $stmt->get_result();
-            $students = [];
-
-            while ($row = $result->fetch_assoc()) {
-                $students[] = $row;
-            }
-
-            $stmt->close();
-
-            return $students;
-        }
 
         // Fetch course specifications from the instructor's perspective.
         public function getCourseDetails($courseId, $teacherId) {
@@ -97,7 +64,7 @@
             $teacherId = (int)$teacherId;
             $connection = $this->connection;
 
-            $sql = "SELECT 
+            $sql = "SELECT
                         c.id,
                         c.course_name,
                         c.department_id,
@@ -107,13 +74,14 @@
                         c.credits,
                         COUNT(DISTINCT s.id) AS total_students,
                         COUNT(DISTINCT b.id) AS total_blocks,
-                        SUM(CASE WHEN b.teacher_id = ? THEN 1 ELSE 0 END) AS my_blocks_count
+                        COUNT(DISTINCT CASE WHEN b.teacher_id = ? THEN b.id END) AS my_blocks_count
                     FROM course c
                     LEFT JOIN departments d ON d.id = c.department_id
                     LEFT JOIN blocks b ON b.course_id = c.id
                     LEFT JOIN student s ON s.course_id = c.id
                     WHERE c.id = ?
-                    GROUP BY c.id, c.course_name, c.department_id, d.department, c.progress, c.status, c.credits";
+                    GROUP BY c.id, c.course_name, c.department_id, d.department, c.progress, c.status, c.credits
+                    HAVING my_blocks_count > 0";
 
             $stmt = $connection->prepare($sql);
             $stmt->bind_param("ii", $teacherId, $courseId);
@@ -132,7 +100,7 @@
             $teacherId = (int)$teacherId;
             $connection = $this->connection;
 
-            $sql = "SELECT 
+            $sql = "SELECT
                         b.id,
                         b.block_name,
                         b.course_id,
@@ -153,6 +121,7 @@
             while ($row = $result->fetch_assoc()) {
                 $blockId = (int)$row['id'];
                 $row['files'] = $this->getBlockFiles($blockId);
+                $row['links'] = $this->getBlockLinks($blockId);
                 $blocks[] = $row;
             }
 
@@ -167,9 +136,9 @@
             $blockId = (int)$blockId;
             $connection = $this->connection;
 
-            $sql = "SELECT id, subject_id, file_name, file_path 
-                    FROM files 
-                    WHERE subject_id = ? 
+            $sql = "SELECT id, subject_id, file_name, file_path
+                    FROM files
+                    WHERE subject_id = ?
                     ORDER BY id ASC";
 
             $stmt = $connection->prepare($sql);
@@ -193,10 +162,10 @@
             $courseId = (int)$courseId;
             $connection = $this->connection;
 
-            $sql = "SELECT DISTINCT 
-                        u.id, 
-                        u.name, 
-                        u.lastname, 
+            $sql = "SELECT DISTINCT
+                        u.id,
+                        u.name,
+                        u.lastname,
                         u.email,
                         u.verified,
                         COALESCE((
@@ -294,18 +263,34 @@
         }
 
         // Delete learning resource from physical disk and database.
-        public function deleteFileFromBlock($teacherId, $fileId) {
+        public function deleteFileFromBlock($teacherId, $fileId, $userRole = 3) {
 
             $teacherId = (int)$teacherId;
             $fileId = (int)$fileId;
+            $userRole = (int)$userRole;
             $connection = $this->connection;
 
-            $sql = "SELECT f.id, f.file_path 
-                    FROM files f
-                    INNER JOIN blocks b ON b.id = f.subject_id
-                    WHERE f.id = ? AND b.teacher_id = ?";
-            $stmt = $connection->prepare($sql);
-            $stmt->bind_param("ii", $fileId, $teacherId);
+            if ($userRole === 1) { // Admin
+                $sql = "SELECT f.id, f.file_path FROM files f WHERE f.id = ?";
+                $stmt = $connection->prepare($sql);
+                $stmt->bind_param("i", $fileId);
+            } elseif ($userRole === 2) { // Director
+                $sql = "SELECT f.id, f.file_path
+                        FROM files f
+                        INNER JOIN blocks b ON b.id = f.subject_id
+                        INNER JOIN course c ON c.id = b.course_id
+                        INNER JOIN director d ON d.department_id = c.department_id
+                        WHERE f.id = ? AND d.id = ?";
+                $stmt = $connection->prepare($sql);
+                $stmt->bind_param("ii", $fileId, $teacherId);
+            } else { // Teacher
+                $sql = "SELECT f.id, f.file_path
+                        FROM files f
+                        INNER JOIN blocks b ON b.id = f.subject_id
+                        WHERE f.id = ? AND b.teacher_id = ?";
+                $stmt = $connection->prepare($sql);
+                $stmt->bind_param("ii", $fileId, $teacherId);
+            }
             $stmt->execute();
             $result = $stmt->get_result();
             $row = $result->fetch_assoc();
@@ -327,6 +312,80 @@
             }
 
             return false;
+        }
+
+        // Add external multimedia or web reference link to a block.
+        public function addLinkToBlock($teacherId, $blockId, $title, $url, $linkType = 'external') {
+            if (!$this->isTeacherOfBlock($teacherId, $blockId)) {
+                return false;
+            }
+
+            $blockId = (int)$blockId;
+            $connection = $this->connection;
+
+            $sql = "INSERT INTO block_links (block_id, title, url, link_type) VALUES (?, ?, ?, ?)";
+            $stmt = $connection->prepare($sql);
+            $stmt->bind_param("isss", $blockId, $title, $url, $linkType);
+            $success = $stmt->execute();
+            $stmt->close();
+
+            return $success;
+        }
+
+        // Delete external reference link from block.
+        public function deleteLinkFromBlock($teacherId, $linkId, $userRole = 3) {
+            $teacherId = (int)$teacherId;
+            $linkId = (int)$linkId;
+            $userRole = (int)$userRole;
+            $connection = $this->connection;
+
+            if ($userRole === 1) { // Admin
+                $sql = "DELETE FROM block_links WHERE id = ?";
+                $stmt = $connection->prepare($sql);
+                $stmt->bind_param("i", $linkId);
+            } elseif ($userRole === 2) { // Director
+                $sql = "DELETE bl FROM block_links bl
+                        INNER JOIN blocks b ON b.id = bl.block_id
+                        INNER JOIN course c ON c.id = b.course_id
+                        INNER JOIN director d ON d.department_id = c.department_id
+                        WHERE bl.id = ? AND d.id = ?";
+                $stmt = $connection->prepare($sql);
+                $stmt->bind_param("ii", $linkId, $teacherId);
+            } else { // Teacher
+                $sql = "DELETE bl FROM block_links bl
+                        INNER JOIN blocks b ON b.id = bl.block_id
+                        WHERE bl.id = ? AND b.teacher_id = ?";
+                $stmt = $connection->prepare($sql);
+                $stmt->bind_param("ii", $linkId, $teacherId);
+            }
+            $success = $stmt->execute();
+            $affected = $stmt->affected_rows;
+            $stmt->close();
+
+            return $success && ($affected > 0);
+        }
+
+        // Fetch external links for a block.
+        public function getBlockLinks($blockId) {
+            $blockId = (int)$blockId;
+            $connection = $this->connection;
+
+            $sql = "SELECT id, block_id, title, url, link_type, created_at
+                    FROM block_links
+                    WHERE block_id = ?
+                    ORDER BY id ASC";
+            $stmt = $connection->prepare($sql);
+            $stmt->bind_param("i", $blockId);
+            $stmt->execute();
+            $result = $stmt->get_result();
+
+            $links = [];
+            while ($row = $result->fetch_assoc()) {
+                $links[] = $row;
+            }
+            $stmt->close();
+
+            return $links;
         }
 
     }

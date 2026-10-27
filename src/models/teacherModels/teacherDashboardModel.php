@@ -138,40 +138,6 @@
             return $courses;
         }
 
-        // Retrieve modules assigned to the teacher along with uploaded resource counts
-        public function getAssignedBlocks($teacherId) {
-
-            $teacherId = (int)$teacherId;
-            $connection = $this->connection;
-
-            $sql = "SELECT 
-                        b.id,
-                        b.block_name,
-                        b.course_id,
-                        c.course_name,
-                        COUNT(f.id) AS files_count
-                    FROM blocks b
-                    INNER JOIN course c ON c.id = b.course_id
-                    LEFT JOIN files f ON f.subject_id = b.id
-                    WHERE b.teacher_id = ?
-                    GROUP BY b.id, b.block_name, b.course_id, c.course_name
-                    ORDER BY c.id ASC, b.id ASC";
-
-            $stmt = $connection->prepare($sql);
-            $stmt->bind_param("i", $teacherId);
-            $stmt->execute();
-
-            $result = $stmt->get_result();
-            $blocks = [];
-
-            while ($row = $result->fetch_assoc()) {
-                $blocks[] = $row;
-            }
-
-            $stmt->close();
-
-            return $blocks;
-        }
 
         // Retrieve recently enrolled students in courses taught by the teacher
         public function getRecentEnrolledStudents($teacherId, $limit = 6) {

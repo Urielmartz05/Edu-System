@@ -17,18 +17,19 @@ body {
     color: #1e293b;
     -webkit-font-smoothing: antialiased;
 }
-
-.standalone-container {
-    width: 100%;
-    max-width: 100%;
+.workspace {
+    margin-left: 75px;
+    width: calc(100% - 75px);
+    max-width: calc(100% - 75px);
     min-height: calc(100vh - 82px);
-    padding: 36px 48px;
+    padding: 32px 40px;
     background-color: #f8fafc;
     box-sizing: border-box;
 }
 
 main {
-    max-width: 1280px;
+    max-width: 1400px;
+    width: 100%;
     margin: 0 auto;
 }
 
@@ -420,8 +421,8 @@ main {
 }
 
 @media (max-width: 768px) {
-    .standalone-container {
-        padding: 24px 20px;
+.workspace {
+        padding: 24px 16px;
     }
     .courses-grid {
         grid-template-columns: 1fr;

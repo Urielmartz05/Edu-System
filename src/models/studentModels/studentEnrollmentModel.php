@@ -21,7 +21,7 @@
 
             $studentId = $studentId ?? ($_SESSION['user_id'] ?? 0);
             $connection = $this->connection;
-            $sql = "SELECT 
+            $sql = "SELECT
                         c.id,
                         c.course_name,
                         c.credits,
@@ -29,9 +29,9 @@
                         d.department,
                         COUNT(DISTINCT b.id) AS total_blocks,
                         COALESCE((
-                            SELECT COUNT(DISTINCT sbp.block_id) 
-                            FROM student_block_progress sbp 
-                            INNER JOIN blocks b2 ON b2.id = sbp.block_id 
+                            SELECT COUNT(DISTINCT sbp.block_id)
+                            FROM student_block_progress sbp
+                            INNER JOIN blocks b2 ON b2.id = sbp.block_id
                             WHERE sbp.student_id = s.id AND b2.course_id = c.id
                         ), 0) AS completed_blocks
                     FROM student s
@@ -66,7 +66,7 @@
 
             $studentId = $studentId ?? ($_SESSION['user_id'] ?? 0);
             $connection = $this->connection;
-            $sql = "SELECT 
+            $sql = "SELECT
                         c.id,
                         c.course_name,
                         c.credits,
@@ -124,31 +124,20 @@
             }
 
             $connection = $this->connection;
-            $sql = "INSERT INTO student (id, course_id) VALUES (?, ?)";
+            $sql = "INSERT INTO student (id, course_id)
+                    SELECT u.id, c.id FROM users u CROSS JOIN course c
+                    WHERE u.id = ? AND u.role = 4 AND c.id = ? AND c.status = 1";
 
             $stmt = $connection->prepare($sql);
             $stmt->bind_param("ii", $studentId, $courseId);
 
             $success = $stmt->execute();
+            $inserted = $stmt->affected_rows > 0;
             $stmt->close();
 
-            return $success;
+            return $success && $inserted;
         }
 
-        // Unenroll student from the designated course.
-        public function unenroll($studentId, $courseId) {
-
-            $connection = $this->connection;
-            $sql = "DELETE FROM student WHERE id = ? AND course_id = ?";
-
-            $stmt = $connection->prepare($sql);
-            $stmt->bind_param("ii", $studentId, $courseId);
-
-            $success = $stmt->execute();
-            $stmt->close();
-
-            return $success;
-        }
 
     }
 

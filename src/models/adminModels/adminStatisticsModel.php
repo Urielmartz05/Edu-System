@@ -64,26 +64,6 @@
             return (int) ($row['active_courses'] ?? 0);
         }
 
-        // Fetch list of courses ranked by highest recorded progress.
-        public function getCoursesProgress() {
-
-            $connection = $this->connection;
-            $sql = "SELECT id, course_name, progress, status FROM course ORDER BY progress DESC";
-
-            $stmt = $connection->prepare($sql);
-            $stmt->execute();
-
-            $result = $stmt->get_result();
-            $courses = [];
-
-            while ($row = $result->fetch_assoc()) {
-                $courses[] = $row;
-            }
-
-            $stmt->close();
-
-            return $courses;
-        }
 
         // Fetch detailed performance list for each course (enrolled students and modules).
         public function getCoursePerformanceList() {

@@ -10,6 +10,49 @@
         exit;
     }
 
+    function requireRole(array $roles) {
+        $user = getLoggedUser();
+        if (!in_array((int)$user['role'], $roles, true)) {
+            http_response_code(403);
+            exit('Access denied.');
+        }
+    }
+
+    function csrfField() {
+        if (empty($_SESSION['csrf_token'])) {
+            $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+        }
+        return '<input type="hidden" name="csrf_token" value="' . htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8') . '">';
+    }
+
+    function resourceLinkAttributes($path, $resourceType, $resourceId) {
+        $root = realpath(__DIR__ . '/../../../resources');
+        $file = realpath(__DIR__ . '/../../../' . $path);
+        if (!$root || !$file || !str_starts_with($file, $root . DIRECTORY_SEPARATOR) || !is_file($file)) {
+            return 'aria-disabled="true"';
+        }
+        if (!in_array($resourceType, ['assignment', 'submission'], true) || (int)$resourceId <= 0) {
+            return 'aria-disabled="true"';
+        }
+        $url = '/src/controllers/files/downloadResource.php?' . http_build_query([
+            'type' => $resourceType, 'id' => (int)$resourceId
+        ]);
+        return 'href="' . htmlspecialchars($url, ENT_QUOTES, 'UTF-8') . '"';
+    }
+
+    function requireValidPost() {
+        if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
+            http_response_code(405);
+            header('Allow: POST');
+            exit('POST required.');
+        }
+        $token = $_POST['csrf_token'] ?? null;
+        if (!is_string($token) || empty($_SESSION['csrf_token']) || !hash_equals($_SESSION['csrf_token'], $token)) {
+            http_response_code(403);
+            exit('Invalid form token. Reload the page and try again.');
+        }
+    }
+
     // Resolve human-readable role name from numerical identifier
     function getRoleName($role_id) {
         switch ((int)$role_id) {
@@ -26,42 +69,41 @@
         }
     }
 
-    // Retrieve active authenticated user session data and populate profile if needed
+    // Refresh authorization once per request so role/account changes take effect immediately.
     function getLoggedUser() {
-        $user = [
-            'id' => $_SESSION['user_id'] ?? '',
-            'name' => $_SESSION['name'] ?? '',
-            'lastname' => $_SESSION['lastname'] ?? '',
-            'email' => $_SESSION['email'] ?? '',
-            'role' => $_SESSION['role_id'] ?? 0,
-            'role_name' => getRoleName($_SESSION['role_id'] ?? 0)
-        ];
-
-        if (empty($user['lastname']) && !empty($user['id'])) {
-            try {
-                include_once __DIR__ . '/../../config/connection.php';
-                $conn = createConnection();
-                $stmt = $conn->prepare("SELECT id, name, lastname, email, role FROM users WHERE id = ?");
-                if ($stmt) {
-                    $stmt->bind_param("i", $user['id']);
-                    $stmt->execute();
-                    $res = $stmt->get_result();
-                    if ($row = $res->fetch_assoc()) {
-                        $user['name'] = $row['name'];
-                        $user['lastname'] = $row['lastname'];
-                        $user['email'] = $row['email'];
-                        $user['role'] = $row['role'];
-                        $user['role_name'] = getRoleName($row['role']);
-                        $_SESSION['lastname'] = $row['lastname'];
-                    }
-                    $stmt->close();
-                }
-            } catch (Exception $e) {
-                // Keep session fallback values
-            }
+        static $user = null;
+        if ($user !== null) {
+            return $user;
         }
+        require_once __DIR__ . '/../../config/connection.php';
+        $connection = createConnection();
+        $id = (int)($_SESSION['user_id'] ?? 0);
+        $sql = "SELECT id, name, lastname, email, role, verified FROM users WHERE id = ?";
 
+        $stmt = $connection->prepare($sql);
+        $stmt->bind_param('i', $id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $row = $result->fetch_assoc();
+        $stmt->close();
+        $connection->close();
+        if (!$row || (int)$row['verified'] !== 1) {
+            $_SESSION = [];
+            session_destroy();
+            header('Location: /index.php');
+            exit;
+        }
+        $user = [
+            'id' => (int)$row['id'],
+            'name' => $row['name'],
+            'lastname' => $row['lastname'] ?? '',
+            'email' => $row['email'],
+            'role' => (int)$row['role'],
+            'role_name' => getRoleName($row['role'])
+        ];
+        $_SESSION['name'] = $user['name'];
+        $_SESSION['lastname'] = $user['lastname'];
+        $_SESSION['email'] = $user['email'];
+        $_SESSION['role_id'] = $user['role'];
         return $user;
     }
-
-?>

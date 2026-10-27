@@ -1,7 +1,7 @@
 <?php
     require_once __DIR__ . '/../../controllers/auth/check_auth.php';
+    requireRole([1]);
     require_once __DIR__ . '/../../models/adminModels/adminDashboardModel.php';
-    $user = getLoggedUser();
 
     $adminDashboard = new AdminDashboard();
     $studentCount = $adminDashboard->getStudentsCount();
@@ -17,7 +17,7 @@
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Dashboard · Edu-System</title>
-        <link rel="stylesheet" href="dashboard.css">
+        <link rel="stylesheet" href="adminDashboard.css">
     </head>
     <body>
         <?php include __DIR__ . '/../../../ui/header/header.php'; ?>
@@ -34,10 +34,10 @@
                             <p class="subtitle">Institutional management dashboard. Monitor student enrollment, curricular publications, faculty staffing, and platform verification queues.</p>
                         </div>
                     </section>
-                    
+
                     <!-- KPI Metrics Grid -->
                     <section class="kpi-grid">
-                        <article class="kpi" onclick="window.location.href='adminUsers.php?role=Student'" style="cursor: pointer;" title="Inspect student directory">
+                        <a href="adminUsers.php?role=Student" class="kpi" style="text-decoration:none; color:inherit; display:block;" title="Inspect student directory">
                             <div class="kpi-header">
                                 <h2 class="kpi-label">Registered Students</h2>
                                 <div class="kpi-icon-wrap icon-emerald">
@@ -46,9 +46,9 @@
                             </div>
                             <strong class="kpi-value"><?php echo $studentCount; ?></strong>
                             <span class="kpi-hint">Active learners enrolled</span>
-                        </article>
+                        </a>
 
-                        <article class="kpi" onclick="window.location.href='adminCourses.php'" style="cursor: pointer;" title="Manage course catalog">
+                        <a href="adminCourses.php" class="kpi" style="text-decoration:none; color:inherit; display:block;" title="Manage course catalog">
                             <div class="kpi-header">
                                 <h2 class="kpi-label">Courses Published</h2>
                                 <div class="kpi-icon-wrap icon-blue">
@@ -57,9 +57,9 @@
                             </div>
                             <strong class="kpi-value"><?php echo $courseCount; ?></strong>
                             <span class="kpi-hint">Curricular programs</span>
-                        </article>
+                        </a>
 
-                        <article class="kpi" onclick="window.location.href='adminUsers.php?role=Teacher'" style="cursor: pointer;" title="Manage faculty members">
+                        <a href="adminUsers.php?role=Teacher" class="kpi" style="text-decoration:none; color:inherit; display:block;" title="Manage faculty members">
                             <div class="kpi-header">
                                 <h2 class="kpi-label">Faculty Staff</h2>
                                 <div class="kpi-icon-wrap icon-maroon">
@@ -68,9 +68,9 @@
                             </div>
                             <strong class="kpi-value"><?php echo $teacherCount; ?></strong>
                             <span class="kpi-hint">Assigned instructors</span>
-                        </article>
+                        </a>
 
-                        <article class="kpi" onclick="window.location.href='adminUsers.php?status=Pending'" style="cursor: pointer;" title="Review pending accounts">
+                        <a href="adminUsers.php?status=Pending" class="kpi" style="text-decoration:none; color:inherit; display:block;" title="Review pending accounts">
                             <div class="kpi-header">
                                 <h2 class="kpi-label">Pending Verifications</h2>
                                 <div class="kpi-icon-wrap icon-amber">
@@ -79,7 +79,7 @@
                             </div>
                             <strong class="kpi-value"><?php echo $pendingAccountsCount; ?></strong>
                             <span class="kpi-hint">Awaiting activation</span>
-                        </article>
+                        </a>
                     </section>
 
                     <!-- Split Panels Grid -->
@@ -107,10 +107,10 @@
                                     </thead>
                                     <tbody>
                                     <?php if (!empty($topCourses)): ?>
-                                        <?php foreach ($topCourses as $course): 
+                                        <?php foreach ($topCourses as $course):
                                             $isPublished = ((int)$course['status'] === 1);
                                         ?>
-                                            <tr onclick="window.location.href='adminCourseContent.php?course_id=<?php echo urlencode($course['id']); ?>'" style="cursor: pointer;" title="Inspect <?php echo htmlspecialchars($course['course_name']); ?>">
+                                            <tr>
                                                 <td class="col-course">
                                                     <span class="cell-title"><?php echo htmlspecialchars($course['course_name']); ?></span>
                                                     <span class="cell-sub"><?php echo htmlspecialchars($course['teacher_name'] ?: 'Unassigned'); ?></span>
@@ -122,7 +122,7 @@
                                                     </span>
                                                 </td>
                                                 <td style="text-align: right;">
-                                                    <a href="adminCourseContent.php?course_id=<?php echo urlencode($course['id']); ?>" class="btn-table-action" onclick="event.stopPropagation();" title="Inspect Course">
+                                                    <a href="adminCourseContent.php?course_id=<?php echo urlencode($course['id']); ?>" class="btn-table-action" title="Inspect Course">
                                                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
                                                         <span>Inspect</span>
                                                     </a>

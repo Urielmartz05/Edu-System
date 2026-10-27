@@ -1,5 +1,6 @@
 <?php
     require_once __DIR__ . "/../../controllers/auth/check_auth.php";
+    requireRole([4]);
     require_once __DIR__ . "/../../models/studentModels/studentDashboardModel.php";
     $user = getLoggedUser();
 
@@ -16,7 +17,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Student Dashboard · Edu-System</title>
-    <link rel="stylesheet" href="dashboard.css">
+    <link rel="stylesheet" href="alumnoDashboard.css">
 </head>
 <body>
     <?php include __DIR__ . '/../../../ui/header/header.php'; ?>
@@ -36,7 +37,7 @@
 
                 <!-- KPI Cards Grid -->
                 <section class="kpi-grid">
-                    <article class="kpi" onclick="window.location.href='alumnoCourses.php'" style="cursor: pointer;" title="View all course modules">
+                    <a href="alumnoCourses.php" class="kpi" style="cursor: pointer; text-decoration:none; color:inherit; display:block;" title="View all course modules">
                         <div class="kpi-header">
                             <h2 class="kpi-label">Course Modules</h2>
                             <div class="kpi-icon-wrap icon-maroon">
@@ -45,7 +46,7 @@
                         </div>
                         <strong class="kpi-value"><?php echo (int)$blocksCount; ?></strong>
                         <span class="kpi-hint">Syllabus modules scheduled</span>
-                    </article>
+                    </a>
 
                     <article class="kpi">
                         <div class="kpi-header">
@@ -110,12 +111,12 @@
                                 <tbody>
                                     <?php if (!empty($courseBlocks)): ?>
                                         <?php foreach ($courseBlocks as $block): ?>
-                                            <tr onclick="window.location.href='blockContent.php?block_id=<?php echo (int)$block['id']; ?>'" style="cursor: pointer;" title="Inspect <?php echo htmlspecialchars($block['block_name']); ?>">
+                                            <tr>
                                                 <td><span class="block-badge">Block #<?php echo (int)$block['id']; ?></span></td>
                                                 <td><span class="module-title-cell"><?php echo htmlspecialchars($block['block_name']); ?></span></td>
                                                 <td><span class="teacher-tag"><?php echo htmlspecialchars($block['teacher_name'] ?? 'Unassigned'); ?></span></td>
                                                 <td style="text-align: right;">
-                                                    <span class="btn-row-action">View →</span>
+                                                    <a href="blockContent.php?block_id=<?php echo (int)$block['id']; ?>" class="btn-row-action" style="text-decoration:none;">View →</a>
                                                 </td>
                                             </tr>
                                         <?php endforeach; ?>

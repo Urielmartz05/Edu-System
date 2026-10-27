@@ -7,6 +7,11 @@
     font-family: 'Poppins', sans-serif;
 }
 
+html {
+    scroll-behavior: smooth;
+    scroll-padding-top: 100px;
+}
+
 html, body {
     max-width: 100%;
     overflow-x: hidden;
@@ -133,6 +138,7 @@ main {
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
     overflow: hidden;
     margin-bottom: 32px;
+    scroll-margin-top: 100px;
 }
 
 .panel-head {
@@ -233,8 +239,7 @@ tbody tr {
 tbody tr:hover {
     background-color: #f8fafc;
 }
-
-.badge, .pill-status {
+.badge {
     display: inline-flex;
     align-items: center;
     justify-content: center;

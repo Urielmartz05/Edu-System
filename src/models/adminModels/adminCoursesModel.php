@@ -319,6 +319,64 @@
             return $newId;
         }
 
+        // Assign a teacher to a course by linking an existing unassigned block or creating a new module.
+        public function assignTeacherToCourse($courseId, $teacherId, $blockTitle = '') {
+            $courseId = (int) $courseId;
+            $teacherId = (int) $teacherId;
+            if ($courseId <= 0 || $teacherId <= 0) {
+                return false;
+            }
+
+            $connection = $this->connection;
+
+            // Check if teacher already has a block in this course
+            $chk = $connection->prepare("SELECT id FROM blocks WHERE course_id = ? AND teacher_id = ? LIMIT 1");
+            $chk->bind_param("ii", $courseId, $teacherId);
+            $chk->execute();
+            if ($chk->get_result()->num_rows > 0) {
+                $chk->close();
+                return true;
+            }
+            $chk->close();
+
+            // Check if there is an unassigned block in this course
+            $un = $connection->prepare("SELECT id FROM blocks WHERE course_id = ? AND (teacher_id IS NULL OR teacher_id = 0) LIMIT 1");
+            $un->bind_param("i", $courseId);
+            $un->execute();
+            $unRes = $un->get_result()->fetch_assoc();
+            $un->close();
+
+            if ($unRes) {
+                $up = $connection->prepare("UPDATE blocks SET teacher_id = ? WHERE id = ?");
+                $up->bind_param("ii", $teacherId, $unRes['id']);
+                $res = $up->execute();
+                $up->close();
+                return $res;
+            } else {
+                $courseData = $this->getCourseDetails($courseId);
+                $cName = $courseData['course_name'] ?? 'Curso';
+                $finalTitle = !empty($blockTitle) ? trim($blockTitle) : ($cName . ' - Módulo Docente');
+                return (bool)$this->createBlock($courseId, $finalTitle, $teacherId);
+            }
+        }
+
+        // Update assigned instructor for a syllabus module block.
+        public function updateBlockTeacher($blockId, $teacherId) {
+            $blockId = (int)$blockId;
+            $teacherId = (int)$teacherId;
+            if ($blockId <= 0 || $teacherId <= 0) {
+                return false;
+            }
+
+            $connection = $this->connection;
+            $stmt = $connection->prepare("UPDATE blocks SET teacher_id = ? WHERE id = ?");
+            $stmt->bind_param("ii", $teacherId, $blockId);
+            $success = $stmt->execute();
+            $stmt->close();
+
+            return $success;
+        }
+
         // Fetch list of teachers available for module assignment.
         public function getTeachersList() {
 
@@ -364,6 +422,333 @@
             return $departments;
         }
 
+        // Fetch department details by ID.
+        public function getDepartmentById($departmentId) {
+
+            $departmentId = (int)$departmentId;
+            $connection = $this->connection;
+            $sql = "SELECT id, department, created_at, updated_at FROM departments WHERE id = ? LIMIT 1";
+
+            $stmt = $connection->prepare($sql);
+            $stmt->bind_param("i", $departmentId);
+            $stmt->execute();
+
+            $result = $stmt->get_result();
+            $row = $result->fetch_assoc();
+            $stmt->close();
+
+            return $row ?: null;
+        }
+
+        // Fetch all departments/sections with associated course counts, director counts, and appointed director names.
+        public function getDepartmentsWithStats() {
+
+            $connection = $this->connection;
+            $sql = "SELECT 
+                        d.id, 
+                        d.department, 
+                        d.created_at, 
+                        COUNT(DISTINCT c.id) AS course_count,
+                        COUNT(DISTINCT dir.id) AS director_count,
+                        COALESCE(GROUP_CONCAT(DISTINCT CONCAT(u.name, ' ', u.lastname) SEPARATOR ', '), 'Unassigned') AS director_name,
+                        MIN(dir.id) AS director_user_id
+                    FROM departments d
+                    LEFT JOIN course c ON c.department_id = d.id
+                    LEFT JOIN director dir ON dir.department_id = d.id
+                    LEFT JOIN users u ON u.id = dir.id
+                    GROUP BY d.id, d.department, d.created_at
+                    ORDER BY d.department ASC";
+
+            $stmt = $connection->prepare($sql);
+            $stmt->execute();
+
+            $result = $stmt->get_result();
+            $departments = [];
+
+            while ($row = $result->fetch_assoc()) {
+                $departments[] = $row;
+            }
+
+            $stmt->close();
+
+            return $departments;
+        }
+
+        // Fetch courses specifically assigned to a department/section.
+        public function getCoursesByDepartmentId($departmentId) {
+
+            $departmentId = (int)$departmentId;
+            $connection = $this->connection;
+            $sql = "SELECT id, course_name, credits, status FROM course WHERE department_id = ? ORDER BY course_name ASC";
+
+            $stmt = $connection->prepare($sql);
+            $stmt->bind_param("i", $departmentId);
+            $stmt->execute();
+
+            $result = $stmt->get_result();
+            $courses = [];
+
+            while ($row = $result->fetch_assoc()) {
+                $courses[] = $row;
+            }
+
+            $stmt->close();
+
+            return $courses;
+        }
+
+        // Fetch all users with Director role.
+        public function getAllDirectors() {
+
+            $connection = $this->connection;
+            $sql = "SELECT 
+                        u.id, 
+                        u.name, 
+                        u.lastname, 
+                        u.email,
+                        d.department_id,
+                        dept.department AS department_name
+                    FROM users u
+                    LEFT JOIN director d ON d.id = u.id
+                    LEFT JOIN departments dept ON dept.id = d.department_id
+                    WHERE u.role = 2
+                    ORDER BY u.name ASC, u.lastname ASC";
+
+            $stmt = $connection->prepare($sql);
+            $stmt->execute();
+
+            $result = $stmt->get_result();
+            $directors = [];
+
+            while ($row = $result->fetch_assoc()) {
+                $directors[] = $row;
+            }
+
+            $stmt->close();
+
+            return $directors;
+        }
+
+        // Assign or reassign a Director to an academic department/section.
+        public function assignDirectorToDepartment($departmentId, $directorUserId) {
+
+            $connection = $this->connection;
+            $departmentId = (int)$departmentId;
+            $directorUserId = (int)$directorUserId;
+
+            if ($departmentId <= 0) {
+                return ['success' => false, 'error' => 'Invalid section identifier.'];
+            }
+
+            $connection->begin_transaction();
+            try {
+                if ($directorUserId <= 0) {
+                    // Unassign director from this department
+                    $stmt = $connection->prepare("DELETE FROM director WHERE department_id = ?");
+                    $stmt->bind_param("i", $departmentId);
+                    $stmt->execute();
+                    $stmt->close();
+                } else {
+                    // Verify user exists and has Director role (role = 2)
+                    $chk = $connection->prepare("SELECT id FROM users WHERE id = ? AND role = 2");
+                    $chk->bind_param("i", $directorUserId);
+                    $chk->execute();
+                    $res = $chk->get_result();
+
+                    if ($res->num_rows === 0) {
+                        $chk->close();
+                        $connection->rollback();
+                        return ['success' => false, 'error' => 'Selected user is not registered as an Academic Director.'];
+                    }
+                    $chk->close();
+
+                    // Upsert into director table
+                    $stmt = $connection->prepare("INSERT INTO director (id, department_id) VALUES (?, ?) ON DUPLICATE KEY UPDATE department_id = VALUES(department_id)");
+                    $stmt->bind_param("ii", $directorUserId, $departmentId);
+                    $stmt->execute();
+                    $stmt->close();
+                }
+
+                $connection->commit();
+                return ['success' => true];
+            } catch (\Throwable $e) {
+                $connection->rollback();
+                return ['success' => false, 'error' => 'Database exception: ' . $e->getMessage()];
+            }
+        }
+
+        // Create a new department/section for course classification.
+        public function createDepartment($departmentName, $directorUserId = 0) {
+
+            $connection = $this->connection;
+            $name = trim($departmentName);
+            $directorUserId = (int)$directorUserId;
+
+            if (empty($name)) {
+                return ['success' => false, 'error' => 'Section / Department name cannot be empty.'];
+            }
+
+            if (mb_strlen($name) > 30) {
+                return ['success' => false, 'error' => 'Section / Department name cannot exceed 30 characters.'];
+            }
+
+            // Case-insensitive duplicate check
+            $checkSql = "SELECT id FROM departments WHERE LOWER(department) = LOWER(?) LIMIT 1";
+            $checkStmt = $connection->prepare($checkSql);
+            $checkStmt->bind_param("s", $name);
+            $checkStmt->execute();
+            $checkRes = $checkStmt->get_result();
+
+            if ($checkRes->num_rows > 0) {
+                $checkStmt->close();
+                return ['success' => false, 'error' => "A section named \"{$name}\" already exists."];
+            }
+            $checkStmt->close();
+
+            $connection->begin_transaction();
+            try {
+                $sql = "INSERT INTO departments (department) VALUES (?)";
+                $stmt = $connection->prepare($sql);
+                $stmt->bind_param("s", $name);
+                $stmt->execute();
+                $newId = $connection->insert_id;
+                $stmt->close();
+
+                // If a director was chosen, assign them immediately
+                if ($directorUserId > 0) {
+                    $stmtDir = $connection->prepare("INSERT INTO director (id, department_id) VALUES (?, ?) ON DUPLICATE KEY UPDATE department_id = VALUES(department_id)");
+                    $stmtDir->bind_param("ii", $directorUserId, $newId);
+                    $stmtDir->execute();
+                    $stmtDir->close();
+                }
+
+                $connection->commit();
+                return ['success' => true, 'id' => $newId];
+            } catch (\Throwable $e) {
+                $connection->rollback();
+                return ['success' => false, 'error' => 'Database error while registering section: ' . $e->getMessage()];
+            }
+        }
+
+        // Delete department/section with support for reassigning courses or cascading deletion.
+        public function deleteDepartment($departmentId, $reassignToDeptId = 0, $cascadeDeleteCourses = false) {
+
+            $connection = $this->connection;
+            $departmentId = (int)$departmentId;
+            $reassignToDeptId = (int)$reassignToDeptId;
+
+            if ($departmentId <= 0) {
+                return ['success' => false, 'error' => 'Invalid section identifier.'];
+            }
+
+            // Retrieve all courses assigned to this department
+            $cStmt = $connection->prepare("SELECT id FROM course WHERE department_id = ?");
+            $cStmt->bind_param("i", $departmentId);
+            $cStmt->execute();
+            $cRes = $cStmt->get_result();
+            $courseIds = [];
+            while ($cRow = $cRes->fetch_assoc()) {
+                $courseIds[] = (int)$cRow['id'];
+            }
+            $cStmt->close();
+            $courseCount = count($courseIds);
+
+            // Reassign scenario
+            if ($reassignToDeptId > 0) {
+                if ($reassignToDeptId === $departmentId) {
+                    return ['success' => false, 'error' => 'Cannot reassign courses to the section being deleted.'];
+                }
+
+                $connection->begin_transaction();
+                try {
+                    // Move courses
+                    if ($courseCount > 0) {
+                        $updCourses = $connection->prepare("UPDATE course SET department_id = ? WHERE department_id = ?");
+                        $updCourses->bind_param("ii", $reassignToDeptId, $departmentId);
+                        $updCourses->execute();
+                        $updCourses->close();
+                    }
+
+                    // Move directors to target department
+                    $updDir = $connection->prepare("UPDATE director SET department_id = ? WHERE department_id = ?");
+                    $updDir->bind_param("ii", $reassignToDeptId, $departmentId);
+                    $updDir->execute();
+                    $updDir->close();
+
+                    // Delete the old department
+                    $delDept = $connection->prepare("DELETE FROM departments WHERE id = ?");
+                    $delDept->bind_param("i", $departmentId);
+                    $delDept->execute();
+                    $delDept->close();
+
+                    $connection->commit();
+                    return ['success' => true, 'message' => "Section deleted and {$courseCount} course(s) successfully reassigned."];
+                } catch (\Throwable $e) {
+                    $connection->rollback();
+                    return ['success' => false, 'error' => 'Database error during reassignment: ' . $e->getMessage()];
+                }
+            }
+
+            // Cascade delete scenario
+            if ($cascadeDeleteCourses) {
+                $connection->begin_transaction();
+                try {
+                    foreach ($courseIds as $cId) {
+                        $this->deleteCourse($cId);
+                    }
+
+                    // Remove director link from this department
+                    $delDir = $connection->prepare("DELETE FROM director WHERE department_id = ?");
+                    $delDir->bind_param("i", $departmentId);
+                    $delDir->execute();
+                    $delDir->close();
+
+                    // Delete department
+                    $delDept = $connection->prepare("DELETE FROM departments WHERE id = ?");
+                    $delDept->bind_param("i", $departmentId);
+                    $delDept->execute();
+                    $delDept->close();
+
+                    $connection->commit();
+                    return ['success' => true, 'message' => "Section and {$courseCount} associated course(s) deleted."];
+                } catch (\Throwable $e) {
+                    $connection->rollback();
+                    return ['success' => false, 'error' => 'Database error during cascade delete: ' . $e->getMessage()];
+                }
+            }
+
+            // Standard delete (if unassigned or 0 courses)
+            $connection->begin_transaction();
+            try {
+                // If any director is linked, remove director record before deleting department
+                $delDir = $connection->prepare("DELETE FROM director WHERE department_id = ?");
+                $delDir->bind_param("i", $departmentId);
+                $delDir->execute();
+                $delDir->close();
+
+                if ($courseCount > 0) {
+                    $connection->rollback();
+                    return [
+                        'success' => false, 
+                        'requires_reassignment' => true,
+                        'course_count' => $courseCount,
+                        'error' => "This section contains {$courseCount} course(s). Please choose to reassign them to another section or delete them."
+                    ];
+                }
+
+                $delDept = $connection->prepare("DELETE FROM departments WHERE id = ?");
+                $delDept->bind_param("i", $departmentId);
+                $delDept->execute();
+                $delDept->close();
+
+                $connection->commit();
+                return ['success' => true];
+            } catch (\Throwable $e) {
+                $connection->rollback();
+                return ['success' => false, 'error' => 'Database error while removing section: ' . $e->getMessage()];
+            }
+        }
+
         // Update curricular specifications of course (title, department, credits, status).
         public function updateCourse($courseId, $courseName, $departmentId, $credits, $status = null) {
 
@@ -401,6 +786,7 @@
             }
 
             $connection->begin_transaction();
+            $pathsToDelete = [];
 
             try {
                 // 1. Fetch block IDs belonging to course
@@ -415,7 +801,7 @@
                 }
                 $blockStmt->close();
 
-                // 2. Unlink files on disk and remove records
+                // 2. Collect paths; physical deletion must wait until commit.
                 if (!empty($blockIds)) {
                     $inPlaceholders = implode(',', array_fill(0, count($blockIds), '?'));
                     $types = str_repeat('i', count($blockIds));
@@ -427,10 +813,7 @@
                     $fRes = $fileStmt->get_result();
 
                     while ($f = $fRes->fetch_assoc()) {
-                        $fullPath = __DIR__ . '/../../../' . $f['file_path'];
-                        if (file_exists($fullPath) && is_file($fullPath)) {
-                            @unlink($fullPath);
-                        }
+                        $pathsToDelete[] = $f['file_path'];
                     }
                     $fileStmt->close();
 
@@ -466,11 +849,12 @@
                 $delCourseStmt->close();
 
                 $connection->commit();
-                return true;
-            } catch (Exception $e) {
+            } catch (Throwable $e) {
                 $connection->rollback();
                 return false;
             }
+            $this->removeCommittedFiles($pathsToDelete);
+            return true;
         }
 
         // Delete a specific syllabus block and attached learning resources.
@@ -484,19 +868,17 @@
             }
 
             $connection->begin_transaction();
+            $pathsToDelete = [];
 
             try {
-                // Unlink physical files
+                // Collect paths without changing the filesystem before commit.
                 $fileStmt = $connection->prepare("SELECT id, file_path FROM files WHERE subject_id = ?");
                 $fileStmt->bind_param("i", $blockId);
                 $fileStmt->execute();
                 $fRes = $fileStmt->get_result();
 
                 while ($f = $fRes->fetch_assoc()) {
-                    $fullPath = __DIR__ . '/../../../' . $f['file_path'];
-                    if (file_exists($fullPath) && is_file($fullPath)) {
-                        @unlink($fullPath);
-                    }
+                    $pathsToDelete[] = $f['file_path'];
                 }
                 $fileStmt->close();
 
@@ -517,10 +899,26 @@
                 $delBlock->close();
 
                 $connection->commit();
-                return true;
-            } catch (Exception $e) {
+            } catch (Throwable $e) {
                 $connection->rollback();
                 return false;
+            }
+            $this->removeCommittedFiles($pathsToDelete);
+            return true;
+        }
+
+        private function removeCommittedFiles(array $paths) {
+            $root = realpath(__DIR__ . '/../../../resources');
+            if (!$root) {
+                return;
+            }
+            foreach (array_unique($paths) as $path) {
+                $file = realpath(__DIR__ . '/../../../' . $path);
+                if ($file && str_starts_with($file, $root . DIRECTORY_SEPARATOR) && is_file($file)) {
+                    if (!@unlink($file)) {
+                        error_log('Could not clean up a resource file after database commit: ' . $path);
+                    }
+                }
             }
         }
 

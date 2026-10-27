@@ -5,6 +5,7 @@
     // ==========================================
 
     require_once __DIR__ . '/../auth/check_auth.php';
+    requireRole([4]);
     require_once __DIR__ . '/../../models/studentModels/studentEnrollmentModel.php';
 
     $user = getLoggedUser();
@@ -19,8 +20,8 @@
             $_SESSION['active_course_id'] = $courseId;
 
             // Redirect according to requested target view
-            $redirect = ($target === 'dashboard') 
-                ? '../../views/alumno/alumnoDashboard.php' 
+            $redirect = ($target === 'dashboard')
+                ? '../../views/alumno/alumnoDashboard.php'
                 : '../../views/alumno/alumnoCourses.php';
 
             header("Location: " . $redirect);

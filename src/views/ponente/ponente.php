@@ -1,5 +1,6 @@
 <?php
     require_once __DIR__ . "/../../controllers/auth/check_auth.php";
+    requireRole([1, 3]);
     require_once __DIR__ . "/../../models/teacherModels/teacherDashboardModel.php";
     $user = getLoggedUser();
 
@@ -20,7 +21,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Faculty Dashboard · Edu-System</title>
-    <link rel="stylesheet" href="dashboard.css">
+    <link rel="stylesheet" href="ponente.css">
 </head>
 <body>
     <?php include_once __DIR__ . '/../../../ui/header/header.php'; ?>
@@ -95,14 +96,14 @@
                         </div>
 
                         <?php if (!empty($assignedCourses)): ?>
-                            <?php foreach ($assignedCourses as $c): 
+                            <?php foreach ($assignedCourses as $c):
                                 $prog = (float)($c['progress'] ?? 0);
                                 $isPublished = ((int)$c['status'] === 1);
                                 $statusText = $isPublished ? 'Active' : 'In Review';
                                 $statusClass = $isPublished ? 'active' : 'pending';
                                 $modulesArray = !empty($c['my_blocks_list']) ? explode(' • ', $c['my_blocks_list']) : [];
                             ?>
-                                <article class="class-card" onclick="window.location.href='ponenteCourseContent.php?course_id=<?php echo (int)$c['id']; ?>'" style="cursor: pointer;" title="Open <?php echo htmlspecialchars($c['course_name']); ?> workspace">
+                                <article class="class-card" title="<?php echo htmlspecialchars($c['course_name']); ?> workspace">
                                     <div class="class-card-top">
                                         <span class="badge-dept"><?php echo htmlspecialchars($c['department_name'] ?? 'General'); ?></span>
                                         <span class="badge-status <?php echo $statusClass; ?>">
@@ -151,7 +152,7 @@
                                                 <span><?php echo (int)($c['credits'] ?? 0); ?> credits</span>
                                             </div>
                                         </div>
-                                        <a href="ponenteCourseContent.php?course_id=<?php echo (int)$c['id']; ?>" class="btn-open-workspace" onclick="event.stopPropagation();">
+                                        <a href="ponenteCourseContent.php?course_id=<?php echo (int)$c['id']; ?>" class="btn-open-workspace">
                                             <span>Open Course Workspace</span>
                                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
                                         </a>

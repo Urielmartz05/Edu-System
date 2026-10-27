@@ -74,7 +74,8 @@ body {
     margin-bottom: 6px;
 }
 
-.registro-form input {
+.registro-form input:not([type="checkbox"]),
+.registro-form select {
     width: 100%;
     padding: 11px 13px;
     font-size: 14px;
@@ -87,7 +88,8 @@ body {
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-.registro-form input:focus {
+.registro-form input:focus,
+.registro-form select:focus {
     border-color: #8B1528;
     box-shadow: 0 0 0 3px rgba(139, 21, 40, 0.15);
     background-color: #ffffff;

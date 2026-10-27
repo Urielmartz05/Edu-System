@@ -1,17 +1,7 @@
 <?php
     require_once __DIR__ . '/../auth/check_auth.php';
-    $user = getLoggedUser();
-
-    $roleId = (int)($user['role'] ?? ($_SESSION['role_id'] ?? 0));
-    if ($roleId !== 1) {
-        header("Location: ../../views/general/403.php");
-        exit;
-    }
-
-    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-        header("Location: ../../views/admin/adminCreate.php");
-        exit;
-    }
+    requireValidPost();
+    requireRole([1]);
 
     $action = $_POST['action'] ?? '';
 
@@ -80,6 +70,8 @@
             $lastname = trim($_POST['lastname'] ?? '');
             $email = trim($_POST['email'] ?? '');
             $password = $_POST['password'] ?? 'password123';
+            $courseId = (int)($_POST['course_id'] ?? 0);
+            $specialty = trim($_POST['specialty'] ?? '');
 
             if (empty($name) || empty($lastname) || empty($email) || empty($password)) {
                 $_SESSION['flash_error'] = "First name, last name, email, and password are required.";
@@ -89,6 +81,10 @@
 
             $result = $usersModel->createTeacher($name, $lastname, $email, $password);
             if ($result['success']) {
+                $teacherId = (int)$result['id'];
+                if ($courseId > 0) {
+                    $coursesModel->assignTeacherToCourse($courseId, $teacherId, $specialty);
+                }
                 $_SESSION['flash_success'] = "Faculty member {$name} {$lastname} appointed successfully!";
                 header("Location: ../../views/admin/adminCreate.php?tab=teacher&status=success");
                 exit;
@@ -122,6 +118,105 @@
                 exit;
             }
             break;
+
+        case 'director':
+            $name = trim($_POST['name'] ?? '');
+            $lastname = trim($_POST['lastname'] ?? '');
+            $email = trim($_POST['email'] ?? '');
+            $password = $_POST['password'] ?? 'password123';
+            $departmentId = (int)($_POST['department_id'] ?? 0);
+
+            if (empty($name) || empty($lastname) || empty($email) || empty($password) || $departmentId <= 0) {
+                $_SESSION['flash_error'] = "First name, last name, email, password, and assigned section/department are required.";
+                header("Location: ../../views/admin/adminCreate.php?tab=director&status=error");
+                exit;
+            }
+
+            $result = $usersModel->createDirector($name, $lastname, $email, $password, $departmentId);
+            if ($result['success']) {
+                $_SESSION['flash_success'] = "Academic Director {$name} {$lastname} appointed and assigned successfully!";
+                header("Location: ../../views/admin/adminCreate.php?tab=director&status=success");
+                exit;
+            } else {
+                $_SESSION['flash_error'] = $result['error'] ?? "Failed to create Academic Director.";
+                header("Location: ../../views/admin/adminCreate.php?tab=director&status=error");
+                exit;
+            }
+            break;
+
+        case 'section':
+        case 'department':
+            $departmentName = trim($_POST['department_name'] ?? '');
+            $directorUserId = (int)($_POST['director_id'] ?? 0);
+
+            if (empty($departmentName)) {
+                $_SESSION['flash_error'] = "Section / Department name is required.";
+                header("Location: ../../views/admin/adminCreate.php?tab=section&status=error");
+                exit;
+            }
+
+            $result = $coursesModel->createDepartment($departmentName, $directorUserId);
+            if ($result['success']) {
+                $_SESSION['flash_success'] = "Section / Department \"{$departmentName}\" created successfully!";
+                header("Location: ../../views/admin/adminCreate.php?tab=section&status=success");
+                exit;
+            } else {
+                $_SESSION['flash_error'] = $result['error'] ?? "Failed to create section.";
+                header("Location: ../../views/admin/adminCreate.php?tab=section&status=error");
+                exit;
+            }
+            break;
+
+        case 'assign_director':
+            $departmentId = (int)($_POST['department_id'] ?? 0);
+            $directorId = (int)($_POST['director_id'] ?? 0);
+
+            if ($departmentId <= 0) {
+                $_SESSION['flash_error'] = "Invalid section identifier.";
+                header("Location: ../../views/admin/adminCreate.php?tab=section&status=error");
+                exit;
+            }
+
+            $res = $coursesModel->assignDirectorToDepartment($departmentId, $directorId);
+            if ($res['success']) {
+                $_SESSION['flash_success'] = "Director assignment updated successfully.";
+            } else {
+                $_SESSION['flash_error'] = $res['error'] ?? "Failed to update director assignment.";
+            }
+            header("Location: ../../views/admin/adminCreate.php?tab=section");
+            exit;
+
+        case 'delete_section':
+        case 'delete_department':
+            $departmentId = (int)($_POST['department_id'] ?? 0);
+            $deleteMode = trim($_POST['delete_mode'] ?? 'standard');
+            $reassignToId = (int)($_POST['reassign_to_id'] ?? 0);
+
+            if ($departmentId <= 0) {
+                $_SESSION['flash_error'] = "Invalid section identifier.";
+                header("Location: ../../views/admin/adminCreate.php?tab=section&status=error");
+                exit;
+            }
+
+            $dept = $coursesModel->getDepartmentById($departmentId);
+            $dName = $dept ? $dept['department'] : "#{$departmentId}";
+
+            if ($deleteMode === 'reassign' && $reassignToId > 0) {
+                $result = $coursesModel->deleteDepartment($departmentId, $reassignToId, false);
+            } elseif ($deleteMode === 'cascade') {
+                $result = $coursesModel->deleteDepartment($departmentId, 0, true);
+            } else {
+                $result = $coursesModel->deleteDepartment($departmentId, 0, false);
+            }
+
+            if ($result['success']) {
+                $msg = $result['message'] ?? "Section / Department \"{$dName}\" deleted successfully.";
+                $_SESSION['flash_success'] = $msg;
+            } else {
+                $_SESSION['flash_error'] = $result['error'] ?? "Failed to delete section.";
+            }
+            header("Location: ../../views/admin/adminCreate.php?tab=section");
+            exit;
 
         default:
             header("Location: ../../views/admin/adminCreate.php");

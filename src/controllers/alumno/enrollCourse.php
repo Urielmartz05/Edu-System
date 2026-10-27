@@ -1,5 +1,7 @@
 <?php
     require_once __DIR__ . '/../auth/check_auth.php';
+    requireValidPost();
+    requireRole([4]);
     require_once __DIR__ . '/../../models/studentModels/studentEnrollmentModel.php';
 
     $user = getLoggedUser();
@@ -10,8 +12,8 @@
         $enrollmentModel = new StudentEnrollment();
         if ($enrollmentModel->enroll($studentId, $courseId)) {
             $_SESSION['active_course_id'] = $courseId;
-            $_SESSION['flash_success'] = "Successfully enrolled in the course!";
-            header("Location: ../../views/alumno/misCursos.php?enrolled=success");
+            $_SESSION['flash_success'] = "Enrollment successful! You have entered your new course program.";
+            header("Location: ../../views/alumno/alumnoCourses.php?course_id={$courseId}&enrolled=1");
             exit;
         }
     }

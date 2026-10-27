@@ -49,11 +49,11 @@
             $targetCourseId = $this->resolveCourseId($studentId, $courseId);
             $connection = $this->connection;
 
-            $sql = "SELECT 
-                        c.id, 
-                        c.course_name, 
-                        c.department_id, 
-                        c.progress, 
+            $sql = "SELECT
+                        c.id,
+                        c.course_name,
+                        c.department_id,
+                        c.progress,
                         c.status,
                         c.credits
                     FROM student s
@@ -76,7 +76,7 @@
 
             $studentId = $studentId ?? ($_SESSION['user_id'] ?? 0);
             $targetCourseId = $this->resolveCourseId($studentId, $courseId);
-            
+
             if ($targetCourseId <= 0 || $studentId <= 0) {
                 return 0.0;
             }
@@ -148,7 +148,7 @@
             }
 
             // Modules completed by this student
-            $compSql = "SELECT COUNT(sbp.block_id) AS completed 
+            $compSql = "SELECT COUNT(sbp.block_id) AS completed
                         FROM student_block_progress sbp
                         INNER JOIN blocks b ON b.id = sbp.block_id
                         WHERE sbp.student_id = ? AND b.course_id = ?";
@@ -170,7 +170,7 @@
             $targetCourseId = $this->resolveCourseId($studentId, $courseId);
             $connection = $this->connection;
 
-            $sql = "SELECT c.credits 
+            $sql = "SELECT c.credits
                     FROM student s
                     INNER JOIN course c ON c.id = s.course_id
                     WHERE s.id = ? AND s.course_id = ?";
@@ -193,7 +193,7 @@
             $targetCourseId = $this->resolveCourseId($studentId, $courseId);
             $connection = $this->connection;
 
-            $sql = "SELECT 
+            $sql = "SELECT
                         b.id,
                         b.block_name,
                         b.course_id,
@@ -217,6 +217,9 @@
             $blocks = [];
 
             while ($row = $result->fetch_assoc()) {
+                $blockId = (int)$row['id'];
+                $row['files'] = $this->getBlockFiles($blockId);
+                $row['links'] = $this->getBlockLinks($blockId);
                 $blocks[] = $row;
             }
 
@@ -232,7 +235,7 @@
             $targetCourseId = $this->resolveCourseId($studentId, $courseId);
             $connection = $this->connection;
 
-            $sql = "SELECT COUNT(b.id) AS total_blocks 
+            $sql = "SELECT COUNT(b.id) AS total_blocks
                     FROM student s
                     INNER JOIN blocks b ON b.course_id = s.course_id
                     WHERE s.id = ? AND s.course_id = ?";
@@ -255,7 +258,7 @@
             $studentId = (int) ($studentId ?? ($_SESSION['user_id'] ?? 0));
             $connection = $this->connection;
 
-            $sql = "SELECT 
+            $sql = "SELECT
                         b.id,
                         b.block_name,
                         b.course_id,
@@ -270,6 +273,7 @@
                         CASE WHEN sbp.block_id IS NOT NULL THEN 1 ELSE 0 END AS is_completed
                     FROM blocks b
                     INNER JOIN course c ON c.id = b.course_id
+                    INNER JOIN student enrollment ON enrollment.course_id = c.id AND enrollment.id = ?
                     LEFT JOIN departments d ON d.id = c.department_id
                     LEFT JOIN users u ON u.id = b.teacher_id
                     LEFT JOIN student_block_progress sbp ON sbp.block_id = b.id AND sbp.student_id = ?
@@ -277,7 +281,7 @@
                     LIMIT 1";
 
             $stmt = $connection->prepare($sql);
-            $stmt->bind_param("ii", $studentId, $blockId);
+            $stmt->bind_param("iii", $studentId, $studentId, $blockId);
             $stmt->execute();
 
             $result = $stmt->get_result();
@@ -293,8 +297,8 @@
             $blockId = (int) $blockId;
             $connection = $this->connection;
 
-            $sql = "SELECT id, subject_id, file_name, file_path 
-                    FROM files 
+            $sql = "SELECT id, subject_id, file_name, file_path
+                    FROM files
                     WHERE subject_id = ?
                     ORDER BY id ASC";
 
@@ -312,6 +316,31 @@
             $stmt->close();
 
             return $files;
+        }
+
+        // Fetch external links and multimedia resources attached to a block.
+        public function getBlockLinks($blockId) {
+            $blockId = (int)$blockId;
+            $connection = $this->connection;
+
+            $sql = "SELECT id, block_id, title, url, link_type, created_at
+                    FROM block_links
+                    WHERE block_id = ?
+                    ORDER BY id ASC";
+
+            $stmt = $connection->prepare($sql);
+            $stmt->bind_param("i", $blockId);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $links = [];
+
+            while ($row = $result->fetch_assoc()) {
+                $links[] = $row;
+            }
+
+            $stmt->close();
+
+            return $links;
         }
 
     }

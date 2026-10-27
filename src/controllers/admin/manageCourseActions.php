@@ -5,20 +5,14 @@
     // ==========================================
 
     require_once __DIR__ . '/../auth/check_auth.php';
-    $user = getLoggedUser();
-
-    // Verify Administrator role authorization (Role 1)
-    $roleId = (int)($user['role'] ?? ($_SESSION['role_id'] ?? 0));
-    if ($roleId !== 1) {
-        header("Location: ../../views/general/403.php");
-        exit;
-    }
+    requireValidPost();
+    requireRole([1]);
 
     require_once __DIR__ . '/../../models/adminModels/adminCoursesModel.php';
     $coursesModel = new AdminCourses();
 
-    $action = $_POST['action'] ?? $_GET['action'] ?? '';
-    $courseId = (int)($_POST['course_id'] ?? $_GET['course_id'] ?? 0);
+    $action = $_POST['action'] ?? '';
+    $courseId = (int)($_POST['course_id'] ?? 0);
 
     switch ($action) {
 
@@ -41,7 +35,11 @@
                 $_SESSION['flash_error'] = "Failed to update course specifications.";
             }
 
-            $returnUrl = !empty($_POST['return_url']) ? $_POST['return_url'] : '../../views/admin/adminCourses.php';
+            $returnUrl = '../../views/admin/adminCourses.php';
+            if (($_POST['return_url'] ?? '') === 'adminCourseContent.php'
+                || str_starts_with($_POST['return_url'] ?? '', '../../views/admin/adminCourseContent.php?')) {
+                $returnUrl = '../../views/admin/adminCourseContent.php?course_id=' . $courseId;
+            }
             header("Location: " . $returnUrl);
             exit;
 
@@ -81,6 +79,28 @@
             }
 
             header("Location: ../../views/admin/adminCourseContent.php?course_id=" . urlencode($courseId));
+            exit;
+
+        case 'delete_department':
+        case 'delete_section':
+            $departmentId = (int)($_POST['department_id'] ?? $_GET['department_id'] ?? 0);
+            if ($departmentId <= 0) {
+                $_SESSION['flash_error'] = "Invalid section identifier.";
+                header("Location: ../../views/admin/adminCreate.php?tab=section");
+                exit;
+            }
+
+            $dept = $coursesModel->getDepartmentById($departmentId);
+            $dName = $dept ? $dept['department'] : "#{$departmentId}";
+
+            $result = $coursesModel->deleteDepartment($departmentId);
+            if ($result['success']) {
+                $_SESSION['flash_success'] = "Section / Department \"{$dName}\" successfully deleted.";
+            } else {
+                $_SESSION['flash_error'] = $result['error'] ?? "Failed to delete section.";
+            }
+
+            header("Location: ../../views/admin/adminCreate.php?tab=section");
             exit;
 
         default:

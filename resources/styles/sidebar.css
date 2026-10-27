@@ -1,0 +1,217 @@
+:root {
+    --sidebar-width: 75px;
+    --sidebar-icon-size: 34px;
+    --sidebar-avatar-size: 36px;
+    --sidebar-expanded-width: min(260px, calc(100vw - 24px));
+}
+
+/* Keep the content offset aligned with the collapsed navigation rail. */
+body:has(aside) .workspace {
+    margin-left: var(--workspace-sidebar-width, var(--sidebar-width));
+    width: calc(100% - var(--workspace-sidebar-width, var(--sidebar-width)));
+    max-width: calc(100% - var(--workspace-sidebar-width, var(--sidebar-width)));
+    min-width: 0;
+}
+
+aside, aside * {
+    padding: 0;
+    margin: 0;
+    box-sizing: border-box;
+}
+
+aside {
+    height: calc(100vh - 82px);
+    width: var(--sidebar-width);
+    background-color: #111418;
+    position: fixed;
+    top: 82px;
+    left: 0;
+    bottom: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    overflow-x: hidden;
+    overflow-y: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    transition: width 0.3s ease;
+    z-index: 90;
+}
+
+aside::-webkit-scrollbar {
+    display: none;
+}
+
+aside:is(:hover, :focus-within) {
+    width: var(--sidebar-expanded-width);
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.35);
+}
+
+.user-container {
+    flex-shrink: 0;
+    width: 100%;
+    padding: 15px 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.user-info {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 15px;
+    min-width: 0;
+    padding-left: calc((var(--sidebar-width) - 16px - var(--sidebar-avatar-size)) / 2);
+}
+
+.profile-picture {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.user-details {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.user-details p {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+}
+
+.user-details p:first-child {
+    font-size: 13px;
+    font-weight: 600;
+    color: #ffffff;
+}
+
+.user-details p:last-child {
+    font-size: 11px;
+    color: #94a3b8;
+}
+
+.user-icon {
+    width: var(--sidebar-avatar-size);
+    height: var(--sidebar-avatar-size);
+}
+
+aside:is(:hover, :focus-within) .user-details p {
+    opacity: 1;
+    pointer-events: auto;
+    transition-delay: 0.1s;
+}
+
+.options-container {
+    flex-shrink: 0;
+    width: 100%;
+    padding: 10px 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.options-container ul {
+    width: 100%;
+    list-style-type: none;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    gap: 4px;
+}
+
+.sidebar-link {
+    text-decoration: none;
+    color: inherit;
+    display: block;
+    width: 100%;
+}
+
+.option p {
+    color: #e2e8f0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+    font-size: 14px;
+}
+
+aside:is(:hover, :focus-within) .option p {
+    opacity: 1;
+    pointer-events: auto;
+    transition-delay: 0.1s;
+}
+
+.option {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-width: 0;
+    padding: 12px calc((var(--sidebar-width) - 16px - var(--sidebar-icon-size)) / 2);
+    cursor: pointer;
+    border-radius: 12px;
+    transition: background-color 0.2s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s ease;
+}
+
+.option:hover {
+    background-color: rgba(255, 255, 255, 0.08);
+}
+
+.option:hover p {
+    color: #ffffff;
+}
+
+.option:hover .icon {
+    transform: scale(1.08);
+}
+
+aside .option.active {
+    background-color: #8B1528;
+    border-radius: 12px;
+}
+
+aside .option.active:hover {
+    background-color: #9e1930;
+}
+
+.icon {
+    width: var(--sidebar-icon-size);
+    height: var(--sidebar-icon-size);
+    filter: invert(1);
+    flex-shrink: 0;
+    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Keyboard users can expand the same menu without a mouse. */
+aside .sidebar-link:focus-visible {
+    outline: 2px solid #ffffff;
+    outline-offset: -2px;
+    border-radius: 12px;
+}
+
+@media (max-width: 768px) {
+    :root {
+        --sidebar-width: 64px;
+    }
+}
+
+
+@media (max-width: 540px) {
+    :root {
+        --sidebar-width: 56px;
+        --sidebar-icon-size: 28px;
+        --sidebar-avatar-size: 30px;
+    }
+}

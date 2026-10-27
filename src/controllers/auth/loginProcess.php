@@ -10,7 +10,7 @@
     // Process authentication credentials upon POST submission
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $email = trim($_POST['email'] ?? '');
-        $password = trim($_POST['password'] ?? '');
+        $password = $_POST['password'] ?? '';
 
         try {
             $sql = "SELECT * FROM users WHERE email = ?";
@@ -25,7 +25,7 @@
             if ($usuario) {
                 if (password_verify($password, $usuario['password'])) {
                     $autenticado = true;
-                } elseif ($password === $usuario['password']) {
+                } elseif (!password_get_info($usuario['password'])['algo'] && $password === $usuario['password']) {
                     $autenticado = true;
                     // Automatically migrate legacy plaintext passwords to secure hash
                     $nuevoHash = password_hash($password, PASSWORD_DEFAULT);
@@ -40,11 +40,13 @@
                 $estaVerificado = ((int)($usuario['verified'] ?? 0) === 1);
 
                 if (!$estaVerificado) {
-                    $_SESSION['error_login'] = "Please verify your email before logging in.";
+                    $_SESSION['error_login'] = "Your account is pending verification and approval by an administrator.";
                     header("Location: ../../../index.php");
                     exit;
                 }
 
+                session_regenerate_id(true);
+                unset($_SESSION['active_course_id']);
                 $_SESSION['user_id'] = $usuario['id'];
                 $_SESSION['name'] = $usuario['name'];
                 $_SESSION['lastname'] = $usuario['lastname'] ?? '';
@@ -85,7 +87,8 @@
             }
 
         } catch (\Throwable $e) {
-            $_SESSION['error_login'] = "Login error: " . $e->getMessage();
+            error_log($e->getMessage());
+            $_SESSION['error_login'] = "Unable to sign in. Please try again.";
             header("Location: ../../../index.php");
             exit;
         }

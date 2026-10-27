@@ -1,18 +1,32 @@
 <?php
     require_once __DIR__ . "/../../controllers/auth/check_auth.php";
+    requireRole([1, 3]);
     require_once __DIR__ . "/../../models/teacherModels/teacherCoursesModel.php";
-    require_once __DIR__ . "/../../models/teacherModels/teacherDashboardModel.php";
     $user = getLoggedUser();
 
     $teacherId = (int)$user['id'];
     $coursesModel = new TeacherCourses();
-    $dashboardModel = new TeacherDashboard();
 
     $assignedCourses = $coursesModel->getCoursesWithDetails($teacherId);
-    $totalCourses = $dashboardModel->getAssignedCoursesCount($teacherId);
-    $totalStudents = $dashboardModel->getEnrolledStudentsCount($teacherId);
-    $totalBlocks = $dashboardModel->getAssignedBlocksCount($teacherId);
-    $avgProgress = $dashboardModel->getAverageProgress($teacherId);
+
+    // Pure PHP filtering
+    $search = trim($_GET['search'] ?? '');
+    $statusFilter = trim($_GET['status'] ?? '');
+
+    if (!empty($search)) {
+        $assignedCourses = array_filter($assignedCourses, function($c) use ($search) {
+            return stripos($c['course_name'] ?? '', $search) !== false
+                || stripos($c['department_name'] ?? '', $search) !== false;
+        });
+    }
+
+    if (!empty($statusFilter)) {
+        $assignedCourses = array_filter($assignedCourses, function($c) use ($statusFilter) {
+            $isPublished = ((int)$c['status'] === 1);
+            $statusText = $isPublished ? 'Active' : 'In Review';
+            return strtolower($statusText) === strtolower($statusFilter);
+        });
+    }
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -20,7 +34,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Courses · Edu-System</title>
-    <link rel="stylesheet" href="courses.css">
+    <link rel="stylesheet" href="ponenteCourses.css">
 </head>
 <body>
     <?php include __DIR__ . '/../../../ui/header/header.php'; ?>
@@ -48,24 +62,28 @@
                         <span class="badge-tag"><?php echo count($assignedCourses); ?> Course(s)</span>
                     </div>
 
-                    <div class="filters-bar">
-                        <input type="search" class="search-input" id="courseSearch" placeholder="Search by course name or department..." onkeyup="filterCourses()">
-                        <select class="filter-select" id="statusFilter" onchange="filterCourses()">
+                    <form method="GET" action="ponenteCourses.php" class="filters-bar">
+                        <input type="search" name="search" class="search-input" id="courseSearch" placeholder="Search by course name or department..." value="<?php echo htmlspecialchars($search); ?>">
+                        <select name="status" class="filter-select" id="statusFilter">
                             <option value="">All statuses</option>
-                            <option value="Active">Active</option>
-                            <option value="In Review">In Review</option>
+                            <option value="Active" <?php echo ($statusFilter === 'Active') ? 'selected' : ''; ?>>Active</option>
+                            <option value="In Review" <?php echo ($statusFilter === 'In Review') ? 'selected' : ''; ?>>In Review</option>
                         </select>
-                    </div>
+                        <button type="submit" class="btn-primary" style="padding: 10px 18px; border-radius: 8px; border:none; background:#881337; color:#fff; font-weight:600; cursor:pointer;">Filter</button>
+                        <?php if (!empty($search) || !empty($statusFilter)): ?>
+                            <a href="ponenteCourses.php" style="padding: 10px 16px; background:#f1f5f9; border-radius:8px; text-decoration:none; color:#475569; font-weight:600; font-size:13px;">Reset</a>
+                        <?php endif; ?>
+                    </form>
 
                     <div class="courses-grid" id="coursesGrid">
                         <?php if (!empty($assignedCourses)): ?>
-                            <?php foreach ($assignedCourses as $c): 
+                            <?php foreach ($assignedCourses as $c):
                                 $prog = (float)($c['progress'] ?? 0);
                                 $isPublished = ((int)$c['status'] === 1);
                                 $statusText = $isPublished ? 'Active' : 'In Review';
                                 $statusClass = $isPublished ? 'active' : 'pending';
                             ?>
-                                <article class="course-card" data-status="<?php echo $statusText; ?>" onclick="window.location.href='ponenteCourseContent.php?course_id=<?php echo (int)$c['id']; ?>'" tabindex="0">
+                                <a href="ponenteCourseContent.php?course_id=<?php echo (int)$c['id']; ?>" class="course-card" style="text-decoration:none; color:inherit; display:flex;">
                                     <div class="card-top">
                                         <span class="badge-dept"><?php echo htmlspecialchars($c['department_name'] ?? 'General'); ?></span>
                                         <span class="badge-status <?php echo $statusClass; ?>">
@@ -107,7 +125,7 @@
                                             <svg class="arrow-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
                                         </span>
                                     </div>
-                                </article>
+                                </a>
                             <?php endforeach; ?>
                         <?php else: ?>
                             <div class="empty-state">
@@ -123,22 +141,5 @@
             </div>
         </main>
     </div>
-
-    <script>
-        function filterCourses() {
-            const query = document.getElementById('courseSearch').value.toLowerCase().trim();
-            const status = document.getElementById('statusFilter').value;
-            const cards = document.querySelectorAll('#coursesGrid .course-card');
-
-            cards.forEach(card => {
-                const text = card.textContent.toLowerCase();
-                const cardStatus = card.getAttribute('data-status') || '';
-                const matchesQuery = text.includes(query);
-                const matchesStatus = !status || cardStatus === status;
-
-                card.style.display = (matchesQuery && matchesStatus) ? '' : 'none';
-            });
-        }
-    </script>
 </body>
 </html>

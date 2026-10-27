@@ -1,0 +1,14 @@
+@import url('../admin/adminCourseContent.css');
+
+/* Director specific refinements */
+.director-badge-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: #f1f5f9;
+    color: #475569;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+}

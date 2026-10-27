@@ -1,5 +1,6 @@
 <?php
     require_once __DIR__ . "/../../controllers/auth/check_auth.php";
+    requireRole([1, 3]);
     $user = getLoggedUser();
 
     require_once __DIR__ . "/../../models/teacherModels/teacherCoursesModel.php";
@@ -21,9 +22,9 @@
 
     $blocks = $teacherCoursesModel->getCourseBlocksWithFiles($courseId, $user['id']);
     $teacherBlocks = $teacherCoursesModel->getTeacherBlocksForCourse($user['id'], $courseId);
-    $students = $teacherCoursesModel->getCourseStudents($courseId);
+    $allStudents = $teacherCoursesModel->getCourseStudents($courseId);
 
-    // Keep only teacher's assigned blocks
+    // Filter teacher's assigned blocks
     $myBlocks = [];
     $totalFiles = 0;
 
@@ -35,15 +36,57 @@
         }
     }
 
+    // Tab state resolution (Pure PHP)
+    $activeTab = ($_GET['tab'] ?? 'modules') === 'students' ? 'students' : 'modules';
+
+    // Module search filter (Pure PHP)
+    $moduleQuery = trim($_GET['module_query'] ?? '');
+    if (!empty($moduleQuery)) {
+        $myBlocks = array_filter($myBlocks, function($b) use ($moduleQuery) {
+            return stripos($b['block_name'] ?? '', $moduleQuery) !== false;
+        });
+    }
+
+    // Student roster search and status filtering (Pure PHP)
+    $studentQuery = trim($_GET['student_query'] ?? '');
+    $studentStatus = trim($_GET['student_status'] ?? '');
+    $filteredStudents = $allStudents;
+
+    if (!empty($studentQuery)) {
+        $filteredStudents = array_filter($filteredStudents, function($s) use ($studentQuery) {
+            $full = ($s['name'] ?? '') . ' ' . ($s['lastname'] ?? '');
+            $controlId = '#STU-' . (int)($s['id'] ?? 0);
+            return stripos($full, $studentQuery) !== false
+                || stripos($s['email'] ?? '', $studentQuery) !== false
+                || stripos($controlId, $studentQuery) !== false;
+        });
+    }
+
+    if (!empty($studentStatus)) {
+        $filteredStudents = array_filter($filteredStudents, function($s) use ($studentStatus) {
+            $isVer = ((int)($s['verified'] ?? 0) === 1);
+            return ($studentStatus === 'verified' && $isVer) || ($studentStatus === 'pending' && !$isVer);
+        });
+    }
+
+    // Student pagination (Pure PHP)
+    $totalFilteredStudents = count($filteredStudents);
+    $perPage = 10;
+    $totalPages = max(1, (int)ceil($totalFilteredStudents / $perPage));
+    $currentStudentPage = max(1, min((int)($_GET['p'] ?? 1), $totalPages));
+    $studentsPage = array_slice($filteredStudents, ($currentStudentPage - 1) * $perPage, $perPage);
+
     // Extract student emails for mailto broadcast
-    $studentEmails = array_filter(array_column($students, 'email'));
+    $studentEmails = array_filter(array_column($allStudents, 'email'));
     $studentEmailsString = implode(',', $studentEmails);
+
+    // Check if upload or link modal is requested via PHP query param
+    $uploadBlockId = (int)($_GET['upload_block_id'] ?? 0);
+    $addLinkBlockId = (int)($_GET['add_link_block_id'] ?? 0);
 
     $flashSuccess = $_SESSION['flash_success'] ?? null;
     $flashError = $_SESSION['flash_error'] ?? null;
     unset($_SESSION['flash_success'], $_SESSION['flash_error']);
-
-    $statusClass = ((int)($course['status'] ?? 0) === 1) ? 'active' : 'pending';
     $statusText  = ((int)($course['status'] ?? 0) === 1) ? 'Active' : 'In Review';
 ?>
 <!DOCTYPE html>
@@ -52,7 +95,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo htmlspecialchars($course['course_name']); ?> · Instructor Workspace</title>
-    <link rel="stylesheet" href="courseContent.css">
+    <link rel="stylesheet" href="ponenteCourseContent.css">
 </head>
 <body>
     <?php include_once __DIR__ . "/../../../ui/header/header.php"; ?>
@@ -88,18 +131,18 @@
 
                 <!-- Instructor KPI Quick Cards -->
                 <section class="kpi-grid">
-                    <article class="kpi" onclick="switchWorkspaceTab('students')" style="cursor: pointer;" title="View Enrolled Students">
+                    <a href="ponenteCourseContent.php?course_id=<?php echo $courseId; ?>&tab=students" class="kpi" style="text-decoration:none; color:inherit; display:block;" title="View Enrolled Students">
                         <div class="kpi-header">
                             <h2 class="kpi-label">Class Enrollment</h2>
                             <div class="kpi-icon-wrap icon-emerald">
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                             </div>
                         </div>
-                        <strong class="kpi-value"><?php echo count($students); ?></strong>
+                        <strong class="kpi-value"><?php echo count($allStudents); ?></strong>
                         <span class="kpi-hint">Click to inspect class roster</span>
-                    </article>
+                    </a>
 
-                    <article class="kpi" onclick="switchWorkspaceTab('modules')" style="cursor: pointer;" title="View Instructional Modules">
+                    <a href="ponenteCourseContent.php?course_id=<?php echo $courseId; ?>&tab=modules" class="kpi" style="text-decoration:none; color:inherit; display:block;" title="View Instructional Modules">
                         <div class="kpi-header">
                             <h2 class="kpi-label">Teaching Modules</h2>
                             <div class="kpi-icon-wrap icon-blue">
@@ -108,9 +151,9 @@
                         </div>
                         <strong class="kpi-value"><?php echo count($myBlocks); ?></strong>
                         <span class="kpi-hint">Syllabus units instructed</span>
-                    </article>
+                    </a>
 
-                    <article class="kpi" onclick="switchWorkspaceTab('modules')" style="cursor: pointer;" title="View Uploaded Documents">
+                    <a href="ponenteCourseContent.php?course_id=<?php echo $courseId; ?>&tab=modules" class="kpi" style="text-decoration:none; color:inherit; display:block;" title="View Uploaded Documents">
                         <div class="kpi-header">
                             <h2 class="kpi-label">Study Materials</h2>
                             <div class="kpi-icon-wrap icon-amber">
@@ -119,7 +162,7 @@
                         </div>
                         <strong class="kpi-value"><?php echo $totalFiles; ?></strong>
                         <span class="kpi-hint">Published documents</span>
-                    </article>
+                    </a>
 
                     <article class="kpi">
                         <div class="kpi-header">
@@ -133,489 +176,422 @@
                     </article>
                 </section>
 
-                <!-- Workspace Navigation Tabs -->
+                <!-- Workspace Navigation Tabs (Pure PHP Links) -->
                 <nav class="workspace-tabs-bar" role="tablist">
-                    <button type="button" class="tab-btn active" id="tabBtnModules" onclick="switchWorkspaceTab('modules')" role="tab" aria-selected="true">
+                    <a href="ponenteCourseContent.php?course_id=<?php echo $courseId; ?>&tab=modules" class="tab-btn <?php echo ($activeTab === 'modules') ? 'active' : ''; ?>" style="text-decoration:none;" role="tab">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
                         <span>Instructional Modules & Materials</span>
                         <span class="tab-counter"><?php echo count($myBlocks); ?></span>
-                    </button>
-                    <button type="button" class="tab-btn" id="tabBtnStudents" onclick="switchWorkspaceTab('students')" role="tab" aria-selected="false">
+                    </a>
+                    <a href="ponenteCourseContent.php?course_id=<?php echo $courseId; ?>&tab=students" class="tab-btn <?php echo ($activeTab === 'students') ? 'active' : ''; ?>" style="text-decoration:none;" role="tab">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                         <span>Enrolled Students Directory</span>
-                        <span class="tab-counter"><?php echo count($students); ?></span>
-                    </button>
+                        <span class="tab-counter"><?php echo count($allStudents); ?></span>
+                    </a>
                 </nav>
 
-                <!-- ========================================== -->
-                <!-- TAB 1: INSTRUCTIONAL MODULES (ACCORDION)   -->
-                <!-- ========================================== -->
-                <div id="tabContentModules" class="tab-panel active">
-                    <section class="panel">
-                        <!-- Toolbar for 20+ modules scale -->
-                        <div class="panel-toolbar">
-                            <div class="toolbar-search-wrap">
-                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                                <input type="search" id="moduleSearchInput" class="toolbar-search-input" placeholder="Search modules by title or keyword..." oninput="filterModules()">
-                            </div>
-                            <div class="toolbar-actions">
-                                <button type="button" class="btn-toggle-all" id="btnToggleAllModules" onclick="toggleAllModules()">
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="7 13 12 18 17 13"/><polyline points="7 6 12 11 17 6"/></svg>
-                                    <span id="toggleAllModulesText">Expand All</span>
-                                </button>
-                            </div>
-                        </div>
+                <?php if ($activeTab === 'modules'): ?>
+                    <!-- ========================================== -->
+                    <!-- TAB 1: INSTRUCTIONAL MODULES (ACCORDION)   -->
+                    <!-- ========================================== -->
+                    <div id="tabContentModules" class="tab-panel active">
+                        <section class="panel">
+                            <!-- Pure PHP Toolbar for Module Search and Course Actions -->
+                            <div class="panel-toolbar" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+                                <form method="GET" action="ponenteCourseContent.php" class="toolbar-search-wrap" style="flex:1; max-width:380px;">
+                                    <input type="hidden" name="course_id" value="<?php echo $courseId; ?>">
+                                    <input type="hidden" name="tab" value="modules">
+                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                                    <input type="search" name="module_query" class="toolbar-search-input" placeholder="Search modules by title or keyword..." value="<?php echo htmlspecialchars($moduleQuery); ?>">
+                                </form>
+                                <?php if (!empty($moduleQuery)): ?>
+                                    <a href="ponenteCourseContent.php?course_id=<?php echo $courseId; ?>&tab=modules" style="font-size:12px; color:#475569; text-decoration:none; padding:6px 12px; background:#f1f5f9; border-radius:6px; font-weight:600;">Reset</a>
+                                <?php endif; ?>
 
-                        <!-- Modules Accordion List -->
-                        <div class="accordion-container" id="modulesAccordionContainer">
-                            <?php if (!empty($myBlocks)): ?>
-                                <?php foreach ($myBlocks as $idx => $block): 
-                                    $blockId = (int)$block['id'];
-                                    $files = $block['files'] ?? [];
-                                    $filesCount = count($files);
-                                    // Expand first 2 modules by default for immediate context
-                                    $isDefaultOpen = ($idx < 2);
-                                ?>
-                                    <div class="accordion-item <?php echo $isDefaultOpen ? 'open' : ''; ?>" id="accordionItem-<?php echo $blockId; ?>" data-module-name="<?php echo htmlspecialchars(strtolower($block['block_name'])); ?>">
-                                        <!-- Accordion Header -->
-                                        <div class="accordion-header" tabindex="0" role="button" aria-expanded="<?php echo $isDefaultOpen ? 'true' : 'false'; ?>" onclick="toggleModuleAccordion(<?php echo $blockId; ?>)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleModuleAccordion(<?php echo $blockId; ?>);}">
-                                            <div class="accordion-title-wrap">
-                                                <div class="accordion-chevron">
-                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-                                                </div>
-                                                <span class="block-num">#<?php echo sprintf('%02d', $idx + 1); ?></span>
-                                                <h3 class="accordion-title"><?php echo htmlspecialchars($block['block_name']); ?></h3>
-                                                <span class="pill-files-count">
-                                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                                                    <?php echo $filesCount; ?> <?php echo ($filesCount === 1) ? 'file' : 'files'; ?>
-                                                </span>
-                                            </div>
-
-                                            <div class="accordion-header-actions" onclick="event.stopPropagation();">
-                                                <button type="button" class="btn-add-file-block" onclick="openUploadModal(<?php echo $blockId; ?>)" title="Attach document to this module">
-                                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                                                    <span>Attach File</span>
-                                                </button>
-                                            </div>
-                                        </div>
-
-                                        <!-- Accordion Collapsible Content -->
-                                        <div class="accordion-body" id="accordionBody-<?php echo $blockId; ?>">
-                                            <div class="accordion-body-inner">
-                                                <?php if (!empty($files)): ?>
-                                                    <div class="files-grid">
-                                                        <?php foreach ($files as $file): ?>
-                                                            <div class="file-item">
-                                                                <a href="<?php echo htmlspecialchars($file['file_path']); ?>" target="_blank" download class="file-info" title="Download <?php echo htmlspecialchars($file['file_name']); ?>">
-                                                                    <div class="file-icon">
-                                                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                                                                    </div>
-                                                                    <span class="file-name"><?php echo htmlspecialchars($file['file_name']); ?></span>
-                                                                </a>
-                                                                <div class="file-actions">
-                                                                    <a href="<?php echo htmlspecialchars($file['file_path']); ?>" target="_blank" download class="btn-download-icon" title="Download Material">
-                                                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                                                                    </a>
-                                                                    <a href="../../controllers/teacher/manageCourseFiles.php?action=delete&file_id=<?php echo (int)$file['id']; ?>&course_id=<?php echo $courseId; ?>" onclick="return confirm('Remove \'<?php echo htmlspecialchars(addslashes($file['file_name'])); ?>\' from this module?');" class="btn-delete-file" title="Remove material">
-                                                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
-                                                                    </a>
-                                                                </div>
-                                                            </div>
-                                                        <?php endforeach; ?>
-                                                    </div>
-                                                <?php else: ?>
-                                                    <div class="empty-files-box">
-                                                        <p>No study materials attached to this module yet.</p>
-                                                        <button type="button" class="btn-inline-upload" onclick="openUploadModal(<?php echo $blockId; ?>)">
-                                                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                                                            <span>Upload Learning Document</span>
-                                                        </button>
-                                                    </div>
-                                                <?php endif; ?>
-                                            </div>
-                                        </div>
-                                    </div>
-                                <?php endforeach; ?>
-                            <?php else: ?>
-                                <div class="empty-state">No direct instruction modules assigned to your profile in this course.</div>
-                            <?php endif; ?>
-                        </div>
-
-                        <!-- No modules match search empty feedback -->
-                        <div id="noModulesMatchBox" class="empty-state" style="display: none;">
-                            No syllabus modules match your search filter.
-                        </div>
-                    </section>
-                </div>
-
-                <!-- ========================================== -->
-                <!-- TAB 2: ENROLLED STUDENTS (PAGINATED)       -->
-                <!-- ========================================== -->
-                <div id="tabContentStudents" class="tab-panel">
-                    <section class="panel">
-                        <!-- Toolbar for 50+ students scale -->
-                        <div class="panel-toolbar">
-                            <div class="toolbar-search-wrap">
-                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                                <input type="search" id="studentSearchInput" class="toolbar-search-input" placeholder="Search student by name, student ID or email..." oninput="filterStudents()">
-                            </div>
-
-                            <div class="toolbar-actions">
-                                <select id="studentStatusFilter" class="toolbar-select" onchange="filterStudents()">
-                                    <option value="">All Account Statuses</option>
-                                    <option value="verified">Verified Only</option>
-                                    <option value="pending">Pending Only</option>
-                                </select>
-
-                                <?php if (!empty($studentEmailsString)): ?>
-                                    <a href="mailto:?bcc=<?php echo htmlspecialchars($studentEmailsString); ?>&subject=<?php echo urlencode('[' . $course['course_name'] . '] Notice from Instructor'); ?>" class="btn-outline-dark-action" title="Send email notice to all enrolled students">
-                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-                                        <span>Email Class (BCC)</span>
+                                <div class="toolbar-course-actions" style="display:flex; align-items:center; gap:8px;">
+                                    <a href="ponenteAssignments.php?action=new&new_course_id=<?php echo $courseId; ?>" class="btn-create-task" style="display:inline-flex; align-items:center; gap:6px; padding:8px 14px; background:#8B1528; color:#ffffff; font-size:12.5px; font-weight:600; text-decoration:none; border-radius:8px;" title="Publish coursework assignment for this course">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                        <span>Add Assignment</span>
                                     </a>
+                                    <a href="ponenteGrades.php?course_id=<?php echo $courseId; ?>" class="btn-gradebook-link" style="display:inline-flex; align-items:center; gap:6px; padding:8px 14px; background:#f1f5f9; color:#334155; font-size:12.5px; font-weight:600; text-decoration:none; border-radius:8px; border:1px solid #e2e8f0;" title="Inspect Course Gradebook Matrix">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/><circle cx="12" cy="12" r="2"/></svg>
+                                        <span>Course Gradebook</span>
+                                    </a>
+                                </div>
+                            </div>
+
+                            <!-- Modules Accordion List (HTML5 Native Details/Summary) -->
+                            <div class="accordion-container" id="modulesAccordionContainer">
+                                <?php if (!empty($myBlocks)): ?>
+                                    <?php foreach ($myBlocks as $idx => $block):
+                                        $blockId = (int)$block['id'];
+                                        $files = $block['files'] ?? [];
+                                        $filesCount = count($files);
+                                        $isOpen = ($idx < 2) || !empty($moduleQuery);
+                                    ?>
+                                        <details class="accordion-item" <?php echo $isOpen ? 'open' : ''; ?>>
+                                            <!-- Accordion Header -->
+                                            <summary class="accordion-header">
+                                                <div class="accordion-title-wrap">
+                                                    <div class="accordion-chevron">
+                                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                                                    </div>
+                                                    <span class="block-num">#<?php echo sprintf('%02d', $idx + 1); ?></span>
+                                                    <h3 class="accordion-title"><?php echo htmlspecialchars($block['block_name']); ?></h3>
+                                                    <span class="pill-files-count">
+                                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                                                        <?php echo $filesCount; ?> <?php echo ($filesCount === 1) ? 'file' : 'files'; ?>
+                                                    </span>
+                                                </div>
+
+                                                <div class="accordion-header-actions">
+                                                    <a href="ponenteCourseContent.php?course_id=<?php echo $courseId; ?>&tab=modules&upload_block_id=<?php echo $blockId; ?>" class="btn-add-file-block" style="text-decoration:none;" title="Attach document to this module">
+                                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                                        <span>Attach File</span>
+                                                    </a>
+                                                    <a href="ponenteCourseContent.php?course_id=<?php echo $courseId; ?>&tab=modules&add_link_block_id=<?php echo $blockId; ?>" class="btn-add-file-block" style="text-decoration:none; background:#eff6ff; color:#2563eb; border-color:#bfdbfe;" title="Attach web reference or video lecture">
+                                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                                                        <span>Attach Link</span>
+                                                    </a>
+                                                </div>
+                                            </summary>
+
+                                            <!-- Accordion Collapsible Content -->
+                                            <div class="accordion-body">
+                                                <div class="accordion-body-inner">
+                                                    <?php if (!empty($files)): ?>
+                                                        <div class="files-grid">
+                                                            <?php foreach ($files as $file): ?>
+                                                                <div class="file-item">
+                                                                    <a href="../../controllers/files/downloadFile.php?file_id=<?php echo (int)$file['id']; ?>&mode=download" class="file-info" title="Download <?php echo htmlspecialchars($file['file_name']); ?>">
+                                                                        <div class="file-icon">
+                                                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                                                                        </div>
+                                                                        <span class="file-name"><?php echo htmlspecialchars($file['file_name']); ?></span>
+                                                                    </a>
+                                                                    <div class="file-actions">
+                                                                        <a href="../../controllers/files/downloadFile.php?file_id=<?php echo (int)$file['id']; ?>&mode=download" class="btn-download-icon" title="Download Material">
+                                                                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                                                                        </a>
+                                                                        <form method="POST" action="../../controllers/teacher/manageCourseFiles.php" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete this resource?');">
+                                                                            <?php echo csrfField(); ?>
+                                                                            <input type="hidden" name="action" value="delete">
+                                                                            <input type="hidden" name="file_id" value="<?php echo (int)$file['id']; ?>">
+                                                                            <input type="hidden" name="course_id" value="<?php echo (int)$courseId; ?>">
+                                                                            <button type="submit" class="btn-delete-file" title="Remove material">
+                                                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                                                                            </button>
+                                                                        </form>
+                                                                    </div>
+                                                                </div>
+                                                            <?php endforeach; ?>
+                                                        </div>
+                                                    <?php else: ?>
+                                                        <div class="empty-files-box">
+                                                            <p>No study materials attached to this module yet.</p>
+                                                        </div>
+                                                    <?php endif; ?>
+
+                                                    <?php 
+                                                        $blockLinks = $block['links'] ?? [];
+                                                        if (!empty($blockLinks)):
+                                                    ?>
+                                                        <div style="margin-top: 18px; border-top: 1px dashed #e2e8f0; padding-top: 14px;">
+                                                            <div style="font-size: 12px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
+                                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                                                                <span>External Web & Video Resources (<?php echo count($blockLinks); ?>)</span>
+                                                            </div>
+                                                            <div class="files-grid">
+                                                                <?php foreach ($blockLinks as $link): ?>
+                                                                    <div class="file-item">
+                                                                        <a href="<?php echo htmlspecialchars($link['url']); ?>" target="_blank" rel="noopener noreferrer" class="file-info" title="Open external link">
+                                                                            <div class="file-icon" style="background:#eff6ff; color:#2563eb;">
+                                                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+                                                                            </div>
+                                                                            <span class="file-name"><?php echo htmlspecialchars($link['title']); ?></span>
+                                                                        </a>
+                                                                        <div class="file-actions">
+                                                                            <a href="<?php echo htmlspecialchars($link['url']); ?>" target="_blank" rel="noopener noreferrer" class="btn-download-icon" style="background:#eff6ff; color:#2563eb; border-color:#bfdbfe;" title="Open Link">
+                                                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                                                                            </a>
+                                                                            <form method="POST" action="../../controllers/teacher/manageCourseLinks.php" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete this link?');">
+                                                                                <?php echo csrfField(); ?>
+                                                                                <input type="hidden" name="action" value="delete">
+                                                                                <input type="hidden" name="link_id" value="<?php echo (int)$link['id']; ?>">
+                                                                                <input type="hidden" name="course_id" value="<?php echo (int)$courseId; ?>">
+                                                                                <button type="submit" class="btn-delete-file" title="Remove link">
+                                                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                                                                                </button>
+                                                                            </form>
+                                                                        </div>
+                                                                    </div>
+                                                                <?php endforeach; ?>
+                                                            </div>
+                                                        </div>
+                                                    <?php endif; ?>
+                                                </div>
+                                            </div>
+                                        </details>
+                                    <?php endforeach; ?>
+                                <?php else: ?>
+                                    <div class="empty-state">No direct instruction modules match your query in this course.</div>
                                 <?php endif; ?>
                             </div>
-                        </div>
+                        </section>
+                    </div>
 
-                        <!-- Students Table Wrap -->
-                        <div class="table-wrap">
-                            <?php if (!empty($students)): ?>
-                                <table id="studentsTable">
-                                    <thead>
-                                        <tr>
-                                            <th style="width: 26%;">STUDENT</th>
-                                            <th style="width: 14%;">CONTROL ID</th>
-                                            <th style="width: 22%;">INSTITUTIONAL EMAIL</th>
-                                            <th style="width: 18%;">COURSE PROGRESS</th>
-                                            <th style="width: 10%;">ACCOUNT</th>
-                                            <th style="width: 10%; text-align: right;">ACTION</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="studentsTableBody">
-                                        <?php foreach ($students as $stu): ?>
-                                            <?php
-                                                $isVerified = ((int)($stu['verified'] ?? 0) === 1);
-                                                $badgeClass = $isVerified ? 'active' : 'pending';
-                                                $badgeText  = $isVerified ? 'Verified' : 'Pending';
-                                                $initials   = strtoupper(substr($stu['name'] ?? 'S', 0, 1) . substr($stu['lastname'] ?? '', 0, 1));
-                                                $fullName   = trim(($stu['name'] ?? '') . ' ' . ($stu['lastname'] ?? ''));
-                                                $controlId  = '#STU-' . (int)$stu['id'];
-                                                $email      = $stu['email'] ?? '';
-                                                $stuProgress = (int)($stu['progress_percent'] ?? 0);
-                                                $completedBlocks = (int)($stu['completed_blocks'] ?? 0);
-                                                $totalBlocksCount = (int)($stu['total_blocks'] ?? 0);
-                                            ?>
-                                            <tr class="student-row" 
-                                                data-name="<?php echo htmlspecialchars(strtolower($fullName)); ?>" 
-                                                data-id="<?php echo htmlspecialchars(strtolower($controlId)); ?>" 
-                                                data-email="<?php echo htmlspecialchars(strtolower($email)); ?>" 
-                                                data-status="<?php echo $isVerified ? 'verified' : 'pending'; ?>">
-                                                <td>
-                                                    <div class="user-cell">
-                                                        <div class="user-avatar"><?php echo htmlspecialchars($initials); ?></div>
-                                                        <div>
-                                                            <div style="font-weight: 600; color: #0f172a;"><?php echo htmlspecialchars($fullName); ?></div>
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                                <td>
-                                                    <span style="font-weight: 600; color: #475569; font-size: 12.5px;"><?php echo htmlspecialchars($controlId); ?></span>
-                                                </td>
-                                                <td>
-                                                    <a href="mailto:<?php echo htmlspecialchars($email); ?>" style="color: #64748b; text-decoration: none; font-size: 13px;">
-                                                        <?php echo htmlspecialchars($email); ?>
-                                                    </a>
-                                                </td>
-                                                <td>
-                                                    <div style="display:flex; align-items:center; gap:8px;">
-                                                        <div style="flex:1; height:6px; background:#e2e8f0; border-radius:3px; overflow:hidden;">
-                                                            <div style="width:<?php echo min(100, $stuProgress); ?>%; height:100%; background:<?php echo ($stuProgress >= 100) ? '#16a34a' : '#8B1528'; ?>; border-radius:3px;"></div>
-                                                        </div>
-                                                        <span style="font-size:12px; font-weight:600; color:#334155; min-width:32px;"><?php echo $stuProgress; ?>%</span>
-                                                    </div>
-                                                    <span style="font-size:11px; color:#94a3b8;"><?php echo $completedBlocks; ?>/<?php echo $totalBlocksCount; ?> blocks</span>
-                                                </td>
-                                                <td>
-                                                    <span class="badge <?php echo $badgeClass; ?>"><?php echo $badgeText; ?></span>
-                                                </td>
-                                                <td style="text-align: right;">
-                                                    <a href="mailto:<?php echo htmlspecialchars($email); ?>?subject=<?php echo urlencode('[' . $course['course_name'] . '] Instructor Message'); ?>" class="btn-contact-student" title="Send individual email">
-                                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-                                                        <span>Contact</span>
-                                                    </a>
-                                                </td>
+                <?php else: ?>
+                    <!-- ========================================== -->
+                    <!-- TAB 2: ENROLLED STUDENTS (PURE PHP)        -->
+                    <!-- ========================================== -->
+                    <div id="tabContentStudents" class="tab-panel active">
+                        <section class="panel">
+                            <!-- Pure PHP Toolbar for Students Search & Filter -->
+                            <form method="GET" action="ponenteCourseContent.php" class="panel-toolbar">
+                                <input type="hidden" name="course_id" value="<?php echo $courseId; ?>">
+                                <input type="hidden" name="tab" value="students">
+
+                                <div class="toolbar-search-wrap">
+                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                                    <input type="search" name="student_query" class="toolbar-search-input" placeholder="Search student by name, student ID or email..." value="<?php echo htmlspecialchars($studentQuery); ?>">
+                                </div>
+
+                                <div class="toolbar-actions">
+                                    <select name="student_status" class="toolbar-select">
+                                        <option value="">All Account Statuses</option>
+                                        <option value="verified" <?php echo ($studentStatus === 'verified') ? 'selected' : ''; ?>>Verified Only</option>
+                                        <option value="pending" <?php echo ($studentStatus === 'pending') ? 'selected' : ''; ?>>Pending Only</option>
+                                    </select>
+
+                                    <button type="submit" class="btn-primary" style="padding: 8px 16px; border-radius: 6px; border:none; background:#881337; color:#fff; font-weight:600; cursor:pointer;">Filter</button>
+
+                                    <?php if (!empty($studentQuery) || !empty($studentStatus)): ?>
+                                        <a href="ponenteCourseContent.php?course_id=<?php echo $courseId; ?>&tab=students" style="padding: 8px 14px; background:#f1f5f9; border-radius:6px; text-decoration:none; color:#475569; font-weight:600; font-size:13px;">Reset</a>
+                                    <?php endif; ?>
+
+                                    <?php if (!empty($studentEmailsString)): ?>
+                                        <a href="mailto:?bcc=<?php echo htmlspecialchars($studentEmailsString); ?>&subject=<?php echo urlencode('[' . $course['course_name'] . '] Notice from Instructor'); ?>" class="btn-outline-dark-action" style="text-decoration:none;" title="Send email notice to all enrolled students">
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                                            <span>Email Class (BCC)</span>
+                                        </a>
+                                    <?php endif; ?>
+                                </div>
+                            </form>
+
+                            <!-- Students Table Wrap -->
+                            <div class="table-wrap">
+                                <?php if (!empty($studentsPage)): ?>
+                                    <table id="studentsTable">
+                                        <thead>
+                                            <tr>
+                                                <th style="width: 26%;">STUDENT</th>
+                                                <th style="width: 14%;">CONTROL ID</th>
+                                                <th style="width: 22%;">INSTITUTIONAL EMAIL</th>
+                                                <th style="width: 18%;">COURSE PROGRESS</th>
+                                                <th style="width: 10%;">ACCOUNT</th>
+                                                <th style="width: 10%; text-align: right;">ACTION</th>
                                             </tr>
-                                        <?php endforeach; ?>
-                                    </tbody>
-                                </table>
-                            <?php else: ?>
-                                <div class="empty-state">No students are currently enrolled in this course group.</div>
-                            <?php endif; ?>
-                        </div>
-
-                        <!-- No students match search empty feedback -->
-                        <div id="noStudentsMatchBox" class="empty-state" style="display: none;">
-                            No students match your search criteria.
-                        </div>
-
-                        <!-- Pagination Footer for 50+ students scale -->
-                        <div class="pagination-footer" id="studentsPaginationFooter">
-                            <span class="pagination-info" id="paginationInfo">Showing 1 to 10 of <?php echo count($students); ?> students</span>
-                            <div class="pagination-controls">
-                                <button type="button" class="btn-page" id="btnPrevPage" onclick="changeStudentPage(-1)" disabled>
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-                                    <span>Previous</span>
-                                </button>
-                                <span class="page-indicator" id="pageIndicator">Page 1 of 1</span>
-                                <button type="button" class="btn-page" id="btnNextPage" onclick="changeStudentPage(1)">
-                                    <span>Next</span>
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-                                </button>
+                                        </thead>
+                                        <tbody>
+                                            <?php foreach ($studentsPage as $stu): ?>
+                                                <?php
+                                                    $isVerified = ((int)($stu['verified'] ?? 0) === 1);
+                                                    $badgeClass = $isVerified ? 'active' : 'pending';
+                                                    $badgeText  = $isVerified ? 'Verified' : 'Pending';
+                                                    $initials   = strtoupper(substr($stu['name'] ?? 'S', 0, 1) . substr($stu['lastname'] ?? '', 0, 1));
+                                                    $fullName   = trim(($stu['name'] ?? '') . ' ' . ($stu['lastname'] ?? ''));
+                                                    $controlId  = '#STU-' . (int)$stu['id'];
+                                                    $email      = $stu['email'] ?? '';
+                                                    $stuProgress = (int)($stu['progress_percent'] ?? 0);
+                                                    $completedBlocks = (int)($stu['completed_blocks'] ?? 0);
+                                                    $totalBlocksCount = (int)($stu['total_blocks'] ?? 0);
+                                                ?>
+                                                <tr class="student-row">
+                                                    <td>
+                                                        <div class="user-cell">
+                                                            <div class="user-avatar"><?php echo htmlspecialchars($initials); ?></div>
+                                                            <div>
+                                                                <div style="font-weight: 600; color: #0f172a;"><?php echo htmlspecialchars($fullName); ?></div>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td>
+                                                        <span style="font-weight: 600; color: #475569; font-size: 12.5px;"><?php echo htmlspecialchars($controlId); ?></span>
+                                                    </td>
+                                                    <td>
+                                                        <a href="mailto:<?php echo htmlspecialchars($email); ?>" style="color: #64748b; text-decoration: none; font-size: 13px;">
+                                                            <?php echo htmlspecialchars($email); ?>
+                                                        </a>
+                                                    </td>
+                                                    <td>
+                                                        <div style="display:flex; align-items:center; gap:8px;">
+                                                            <div style="flex:1; height:6px; background:#e2e8f0; border-radius:3px; overflow:hidden;">
+                                                                <div style="width:<?php echo min(100, $stuProgress); ?>%; height:100%; background:<?php echo ($stuProgress >= 100) ? '#16a34a' : '#8B1528'; ?>; border-radius:3px;"></div>
+                                                            </div>
+                                                            <span style="font-size:12px; font-weight:600; color:#334155; min-width:32px;"><?php echo $stuProgress; ?>%</span>
+                                                        </div>
+                                                        <span style="font-size:11px; color:#94a3b8;"><?php echo $completedBlocks; ?>/<?php echo $totalBlocksCount; ?> blocks</span>
+                                                    </td>
+                                                    <td>
+                                                        <span class="badge <?php echo $badgeClass; ?>"><?php echo $badgeText; ?></span>
+                                                    </td>
+                                                    <td style="text-align: right;">
+                                                        <a href="mailto:<?php echo htmlspecialchars($email); ?>?subject=<?php echo urlencode('[' . $course['course_name'] . '] Instructor Message'); ?>" class="btn-contact-student" style="text-decoration:none;" title="Send individual email">
+                                                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                                                            <span>Contact</span>
+                                                        </a>
+                                                    </td>
+                                                </tr>
+                                            <?php endforeach; ?>
+                                        </tbody>
+                                    </table>
+                                <?php else: ?>
+                                    <div class="empty-state">No students match your search filter in this course group.</div>
+                                <?php endif; ?>
                             </div>
-                        </div>
-                    </section>
-                </div>
+
+                            <!-- Pure PHP Pagination Footer -->
+                            <?php if ($totalFilteredStudents > 0): ?>
+                                <div class="pagination-footer">
+                                    <span class="pagination-info">
+                                        Showing <?php echo (($currentStudentPage - 1) * $perPage) + 1; ?> to <?php echo min($currentStudentPage * $perPage, $totalFilteredStudents); ?> of <?php echo $totalFilteredStudents; ?> students
+                                    </span>
+                                    <div class="pagination-controls">
+                                        <?php if ($currentStudentPage > 1): ?>
+                                            <a href="ponenteCourseContent.php?course_id=<?php echo $courseId; ?>&tab=students&p=<?php echo $currentStudentPage - 1; ?>&student_query=<?php echo urlencode($studentQuery); ?>&student_status=<?php echo urlencode($studentStatus); ?>" class="btn-page" style="text-decoration:none;">
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+                                                <span>Previous</span>
+                                            </a>
+                                        <?php else: ?>
+                                            <button type="button" class="btn-page" disabled>
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+                                                <span>Previous</span>
+                                            </button>
+                                        <?php endif; ?>
+
+                                        <span class="page-indicator">Page <?php echo $currentStudentPage; ?> of <?php echo $totalPages; ?></span>
+
+                                        <?php if ($currentStudentPage < $totalPages): ?>
+                                            <a href="ponenteCourseContent.php?course_id=<?php echo $courseId; ?>&tab=students&p=<?php echo $currentStudentPage + 1; ?>&student_query=<?php echo urlencode($studentQuery); ?>&student_status=<?php echo urlencode($studentStatus); ?>" class="btn-page" style="text-decoration:none;">
+                                                <span>Next</span>
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                                            </a>
+                                        <?php else: ?>
+                                            <button type="button" class="btn-page" disabled>
+                                                <span>Next</span>
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                                            </button>
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
+                            <?php endif; ?>
+                        </section>
+                    </div>
+                <?php endif; ?>
+
             </div>
         </main>
     </div>
 
-    <!-- Upload Material Modal -->
-    <div class="modal-backdrop" id="uploadModal" onclick="if(event.target === this) closeUploadModal();">
-        <div class="modal-dialog">
-            <div class="modal-header">
-                <h3>Attach Learning Resource</h3>
-                <button type="button" class="btn-close-modal" onclick="closeUploadModal()">&times;</button>
+    <!-- Upload Material Modal (Controlled via Pure PHP query parameter ?upload_block_id=...) -->
+    <?php if ($uploadBlockId > 0): ?>
+        <div class="modal-backdrop" id="uploadModal" style="display: flex;">
+            <div class="modal-dialog">
+                <div class="modal-header">
+                    <h3>Attach Learning Resource</h3>
+                    <a href="ponenteCourseContent.php?course_id=<?php echo $courseId; ?>&tab=<?php echo $activeTab; ?>" class="btn-close-modal" style="text-decoration:none;">&times;</a>
+                </div>
+                <form action="../../controllers/teacher/manageCourseFiles.php" method="POST" enctype="multipart/form-data"><?php echo csrfField(); ?>
+                    <input type="hidden" name="action" value="upload">
+                    <input type="hidden" name="course_id" value="<?php echo $courseId; ?>">
+
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label for="blockSelect">Target Syllabus Module *</label>
+                            <select name="block_id" id="blockSelect" class="form-control" required>
+                                <?php foreach ($teacherBlocks as $tb): ?>
+                                    <option value="<?php echo (int)$tb['id']; ?>" <?php echo ((int)$tb['id'] === $uploadBlockId) ? 'selected' : ''; ?>>
+                                        <?php echo htmlspecialchars($tb['block_name']); ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="fileTitle">Document Title (Optional)</label>
+                            <input type="text" name="file_title" id="fileTitle" class="form-control" placeholder="e.g. Unit 1 Lecture Notes & Lab Guide">
+                            <span class="form-hint">If left empty, original file name will be used.</span>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="fileUploadInput">Select Document / Resource *</label>
+                            <input type="file" name="file" id="fileUploadInput" class="form-control" required>
+                            <span class="form-hint">Supported: PDF, DOC, PPT, XLS, ZIP, Images (Max 25 MB).</span>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <a href="ponenteCourseContent.php?course_id=<?php echo $courseId; ?>&tab=<?php echo $activeTab; ?>" class="btn-cancel-modal" style="text-decoration:none;">Cancel</a>
+                        <button type="submit" class="btn-submit-modal">Upload & Publish</button>
+                    </div>
+                </form>
             </div>
-            <form action="../../controllers/teacher/manageCourseFiles.php" method="POST" enctype="multipart/form-data">
-                <input type="hidden" name="action" value="upload">
-                <input type="hidden" name="course_id" value="<?php echo $courseId; ?>">
-
-                <div class="modal-body">
-                    <div class="form-group">
-                        <label for="blockSelect">Target Syllabus Module *</label>
-                        <select name="block_id" id="blockSelect" class="form-control" required>
-                            <?php foreach ($teacherBlocks as $tb): ?>
-                                <option value="<?php echo (int)$tb['id']; ?>"><?php echo htmlspecialchars($tb['block_name']); ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="fileTitle">Document Title (Optional)</label>
-                        <input type="text" name="file_title" id="fileTitle" class="form-control" placeholder="e.g. Unit 1 Lecture Notes & Lab Guide">
-                        <span class="form-hint">If left empty, original file name will be used.</span>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="fileUploadInput">Select Document / Resource *</label>
-                        <input type="file" name="file" id="fileUploadInput" class="form-control" required>
-                        <span class="form-hint">Supported: PDF, DOC, PPT, XLS, ZIP, Images (Max 25 MB).</span>
-                    </div>
-                </div>
-
-                <div class="modal-footer">
-                    <button type="button" class="btn-cancel-modal" onclick="closeUploadModal()">Cancel</button>
-                    <button type="submit" class="btn-submit-modal">Upload & Publish</button>
-                </div>
-            </form>
         </div>
-    </div>
+    <?php endif; ?>
 
-    <!-- Interactive Client Scripts for Scalability -->
-    <script>
-        /* ====================================================
-           1. WORKSPACE TABS SWITCHING
-           ==================================================== */
-        function switchWorkspaceTab(tab) {
-            const btnModules = document.getElementById('tabBtnModules');
-            const btnStudents = document.getElementById('tabBtnStudents');
-            const contentModules = document.getElementById('tabContentModules');
-            const contentStudents = document.getElementById('tabContentStudents');
+    <!-- Attach Link Modal (Pure PHP query parameter ?add_link_block_id=...) -->
+    <?php if ($addLinkBlockId > 0): ?>
+        <div class="modal-backdrop" id="addLinkModal" style="display: flex;">
+            <div class="modal-dialog">
+                <div class="modal-header">
+                    <h3>Attach External Resource / Video</h3>
+                    <a href="ponenteCourseContent.php?course_id=<?php echo $courseId; ?>&tab=<?php echo $activeTab; ?>" class="btn-close-modal" style="text-decoration:none;">&times;</a>
+                </div>
+                <form action="../../controllers/teacher/manageCourseLinks.php" method="POST"><?php echo csrfField(); ?>
+                    <input type="hidden" name="action" value="add">
+                    <input type="hidden" name="course_id" value="<?php echo $courseId; ?>">
 
-            if (tab === 'students') {
-                btnModules.classList.remove('active');
-                btnModules.setAttribute('aria-selected', 'false');
-                btnStudents.classList.add('active');
-                btnStudents.setAttribute('aria-selected', 'true');
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label for="linkBlockSelect">Target Syllabus Module *</label>
+                            <select name="block_id" id="linkBlockSelect" class="form-control" required>
+                                <?php foreach ($teacherBlocks as $tb): ?>
+                                    <option value="<?php echo (int)$tb['id']; ?>" <?php echo ((int)$tb['id'] === $addLinkBlockId) ? 'selected' : ''; ?>>
+                                        <?php echo htmlspecialchars($tb['block_name']); ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
 
-                contentModules.classList.remove('active');
-                contentStudents.classList.add('active');
-                window.location.hash = 'students';
-                filterStudents(); // Refresh pagination calculations
-            } else {
-                btnStudents.classList.remove('active');
-                btnStudents.setAttribute('aria-selected', 'false');
-                btnModules.classList.add('active');
-                btnModules.setAttribute('aria-selected', 'true');
+                        <div class="form-group">
+                            <label for="linkTitle">Resource Title *</label>
+                            <input type="text" name="title" id="linkTitle" class="form-control" placeholder="e.g. YouTube: Complete OOP Walkthrough" required>
+                        </div>
 
-                contentStudents.classList.remove('active');
-                contentModules.classList.add('active');
-                window.location.hash = 'modules';
-            }
-        }
+                        <div class="form-group">
+                            <label for="linkUrl">Destination Web URL *</label>
+                            <input type="url" name="url" id="linkUrl" class="form-control" placeholder="https://www.youtube.com/watch?v=..." required>
+                            <span class="form-hint">Must begin with https:// or http://</span>
+                        </div>
 
-        /* ====================================================
-           2. ACCORDION MODULES INTERACTION (20+ Scale)
-           ==================================================== */
-        function toggleModuleAccordion(blockId) {
-            const item = document.getElementById('accordionItem-' + blockId);
-            if (item) {
-                item.classList.toggle('open');
-            }
-        }
+                        <div class="form-group">
+                            <label for="linkType">Resource Category</label>
+                            <select name="link_type" id="linkType" class="form-control">
+                                <option value="video">Video Lecture (YouTube, Zoom, Vimeo)</option>
+                                <option value="document">Online Documentation / Cloud Document</option>
+                                <option value="external" selected>General Web Resource / Article</option>
+                                <option value="other">Other Reference</option>
+                            </select>
+                        </div>
+                    </div>
 
-        let allExpanded = false;
-        function toggleAllModules() {
-            const items = document.querySelectorAll('.accordion-item');
-            const btnText = document.getElementById('toggleAllModulesText');
-            allExpanded = !allExpanded;
-
-            items.forEach(item => {
-                if (allExpanded) {
-                    item.classList.add('open');
-                } else {
-                    item.classList.remove('open');
-                }
-            });
-
-            if (btnText) {
-                btnText.textContent = allExpanded ? 'Collapse All' : 'Expand All';
-            }
-        }
-
-        function filterModules() {
-            const query = (document.getElementById('moduleSearchInput').value || '').toLowerCase().trim();
-            const items = document.querySelectorAll('.accordion-item');
-            let matchCount = 0;
-
-            items.forEach(item => {
-                const name = item.getAttribute('data-module-name') || '';
-                if (!query || name.includes(query)) {
-                    item.style.display = '';
-                    matchCount++;
-                    // If searching, automatically expand matching items
-                    if (query) {
-                        item.classList.add('open');
-                    }
-                } else {
-                    item.style.display = 'none';
-                }
-            });
-
-            const noMatchBox = document.getElementById('noModulesMatchBox');
-            if (noMatchBox) {
-                noMatchBox.style.display = (matchCount === 0 && items.length > 0) ? 'block' : 'none';
-            }
-        }
-
-        /* ====================================================
-           3. ENROLLED STUDENTS PAGINATION & FILTER (50+ Scale)
-           ==================================================== */
-        const ROWS_PER_PAGE = 10;
-        let currentStudentPage = 1;
-        let visibleStudentRows = [];
-
-        function filterStudents() {
-            const query = (document.getElementById('studentSearchInput').value || '').toLowerCase().trim();
-            const statusFilter = (document.getElementById('studentStatusFilter').value || '').toLowerCase().trim();
-            const allRows = Array.from(document.querySelectorAll('.student-row'));
-
-            visibleStudentRows = allRows.filter(row => {
-                const name = row.getAttribute('data-name') || '';
-                const id = row.getAttribute('data-id') || '';
-                const email = row.getAttribute('data-email') || '';
-                const status = row.getAttribute('data-status') || '';
-
-                const matchesQuery = (!query || name.includes(query) || id.includes(query) || email.includes(query));
-                const matchesStatus = (!statusFilter || status === statusFilter);
-
-                return matchesQuery && matchesStatus;
-            });
-
-            currentStudentPage = 1;
-            renderStudentPagination();
-        }
-
-        function renderStudentPagination() {
-            const allRows = document.querySelectorAll('.student-row');
-            allRows.forEach(row => row.style.display = 'none');
-
-            const total = visibleStudentRows.length;
-            const totalPages = Math.max(1, Math.ceil(total / ROWS_PER_PAGE));
-
-            if (currentStudentPage > totalPages) currentStudentPage = totalPages;
-            if (currentStudentPage < 1) currentStudentPage = 1;
-
-            const startIndex = (currentStudentPage - 1) * ROWS_PER_PAGE;
-            const endIndex = Math.min(startIndex + ROWS_PER_PAGE, total);
-
-            for (let i = startIndex; i < endIndex; i++) {
-                if (visibleStudentRows[i]) {
-                    visibleStudentRows[i].style.display = '';
-                }
-            }
-
-            // Update UI Counters & Buttons
-            const info = document.getElementById('paginationInfo');
-            const pageIndicator = document.getElementById('pageIndicator');
-            const btnPrev = document.getElementById('btnPrevPage');
-            const btnNext = document.getElementById('btnNextPage');
-            const noMatchBox = document.getElementById('noStudentsMatchBox');
-            const paginationFooter = document.getElementById('studentsPaginationFooter');
-
-            if (total === 0) {
-                if (noMatchBox) noMatchBox.style.display = 'block';
-                if (paginationFooter) paginationFooter.style.display = 'none';
-            } else {
-                if (noMatchBox) noMatchBox.style.display = 'none';
-                if (paginationFooter) paginationFooter.style.display = 'flex';
-                if (info) info.textContent = `Showing ${startIndex + 1} to ${endIndex} of ${total} students`;
-                if (pageIndicator) pageIndicator.textContent = `Page ${currentStudentPage} of ${totalPages}`;
-                if (btnPrev) btnPrev.disabled = (currentStudentPage === 1);
-                if (btnNext) btnNext.disabled = (currentStudentPage >= totalPages);
-            }
-        }
-
-        function changeStudentPage(offset) {
-            currentStudentPage += offset;
-            renderStudentPagination();
-        }
-
-        /* ====================================================
-           4. MODAL DIALOG CONTROLS & ESCAPE LISTENER
-           ==================================================== */
-        function openUploadModal(blockId) {
-            const modal = document.getElementById('uploadModal');
-            if (blockId) {
-                const select = document.getElementById('blockSelect');
-                if (select) select.value = blockId;
-            }
-            modal.style.display = 'flex';
-            document.body.style.overflow = 'hidden';
-            const titleInput = document.getElementById('fileTitle');
-            if (titleInput) setTimeout(() => titleInput.focus(), 60);
-        }
-
-        function closeUploadModal() {
-            const modal = document.getElementById('uploadModal');
-            modal.style.display = 'none';
-            document.body.style.overflow = '';
-        }
-
-        // Global Escape key listener for accessible modal closing
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
-                closeUploadModal();
-            }
-        });
-
-        // Initialize on DOM load
-        document.addEventListener('DOMContentLoaded', () => {
-            if (window.location.hash === '#students') {
-                switchWorkspaceTab('students');
-            } else {
-                filterStudents();
-            }
-        });
-    </script>
+                    <div class="modal-footer">
+                        <a href="ponenteCourseContent.php?course_id=<?php echo $courseId; ?>&tab=<?php echo $activeTab; ?>" class="btn-cancel-modal" style="text-decoration:none;">Cancel</a>
+                        <button type="submit" class="btn-submit-modal">Attach Link</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    <?php endif; ?>
 </body>
 </html>

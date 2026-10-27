@@ -37,12 +37,8 @@ header.main-header .school-brand {
     gap: 10px;
     text-decoration: none;
     color: #ffffff;
-    transition: opacity 0.2s ease, transform 0.2s ease;
-}
-
-header.main-header .school-brand:hover {
-    opacity: 0.92;
-    transform: translateY(-1px);
+    cursor: default;
+    user-select: none;
 }
 
 header.main-header .school-brand-title {
@@ -122,6 +118,23 @@ header.main-header .user-role-badge {
     border-radius: 6px;
     border: 1px solid rgba(255, 255, 255, 0.2);
     letter-spacing: 0.02em;
+}
+
+header.main-header .profile-header-link {
+    text-decoration: none;
+    color: #ffffff;
+    font-weight: 600;
+    font-size: 13px;
+    padding: 6px 14px;
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+header.main-header .profile-header-link:hover {
+    background-color: rgba(255, 255, 255, 0.24);
+    transform: translateY(-1px);
 }
 
 header.main-header .logout-link {

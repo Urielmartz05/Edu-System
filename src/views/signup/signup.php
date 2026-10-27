@@ -1,91 +1,59 @@
 <?php
-    // ==========================================
-    // VIEW & HANDLER: PUBLIC REGISTRATION
-    // ==========================================
-
     include_once __DIR__ . "/../../config/connection.php";
+    require_once __DIR__ . '/../../config/verificationEmail.php';
     $conexion = createConnection();
 
     $mensaje = "";
-    $tokenConfirmacion = "";
     $isSuccess = false;
+    $registeredStudentId = 0;
 
-    // Retrieve active departments for Director assignment
-    $departmentsList = [];
-    $deptRes = $conexion->query("SELECT id, department FROM departments ORDER BY department ASC");
-    if ($deptRes) {
-        while ($d = $deptRes->fetch_assoc()) {
-            $departmentsList[] = $d;
-        }
-    }
-
-    // Process signup registration request upon POST submission
+    // Process student signup registration request upon POST submission
     if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $id = (int)trim($_POST["id"] ?? 0);
         $nombre = trim($_POST["nombre"] ?? "");
         $lastname = trim($_POST["lastname"] ?? "");
         $email = trim(strtolower($_POST["email"] ?? ""));
-        $password = trim($_POST["password"] ?? "");
-        $role = (int) trim($_POST["role"] ?? 0);
-        $departmentId = !empty($_POST["department_id"]) ? (int)$_POST["department_id"] : 1;
+        $password = $_POST["password"] ?? "";
+        // Public registration is strictly for students, requiring institutional admin approval
+        $role = 4;
+        $verifiedValue = 0; // Always pending administrator verification
+        $tokenConfirmacion = null;
 
-        if ($id <= 0 || empty($nombre) || empty($email) || empty($password) || $role <= 0) {
+        if ($id <= 0 || empty($nombre) || !filter_var($email, FILTER_VALIDATE_EMAIL) || $password === '') {
             $mensaje = "All required fields must be completed properly.";
         } else {
-            // Generate password hash and confirmation token
+            // Generate secure password hash
             $passwordHash = password_hash($password, PASSWORD_DEFAULT);
-            $tokenConfirmacion = bin2hex(random_bytes(16));
 
             // Begin atomic transaction to preserve relational integrity
             $conexion->begin_transaction();
 
             try {
-                $sqlUser = "INSERT INTO users 
-                    (id, name, lastname, email, password, role, token_verificacion, verified) VALUES 
-                    (?,?,?,?,?,?,?,0)";
+                $sqlUser = "INSERT INTO users
+                    (id, name, lastname, email, password, role, token_verificacion, verified) VALUES
+                    (?,?,?,?,?,?,?,?)";
                 $stmt = $conexion->prepare($sqlUser);
-                $stmt->bind_param("issssis", $id, $nombre, $lastname, $email, $passwordHash, $role, $tokenConfirmacion);
-                
-                if ($stmt->execute()) {
-                    // Synchronize child table based on assigned academic role
-                    if ($role === 3) {
-                        // Teacher / Instructor
-                        $stmtTeacher = $conexion->prepare("INSERT INTO teacher (id) VALUES (?) ON DUPLICATE KEY UPDATE id = id");
-                        $stmtTeacher->bind_param("i", $id);
-                        $stmtTeacher->execute();
-                        $stmtTeacher->close();
-                    } elseif ($role === 2) {
-                        // Academic Department Director
-                        $stmtDirector = $conexion->prepare("INSERT INTO director (id, department_id) VALUES (?, ?) ON DUPLICATE KEY UPDATE department_id = VALUES(department_id)");
-                        $stmtDirector->bind_param("ii", $id, $departmentId);
-                        $stmtDirector->execute();
-                        $stmtDirector->close();
-                    } elseif ($role === 1) {
-                        // Administrator
-                        $stmtAdmin = $conexion->prepare("INSERT INTO admin (id) VALUES (?) ON DUPLICATE KEY UPDATE id = id");
-                        $stmtAdmin->bind_param("i", $id);
-                        $stmtAdmin->execute();
-                        $stmtAdmin->close();
-                    }
+                $stmt->bind_param("issssisi", $id, $nombre, $lastname, $email, $passwordHash, $role, $tokenConfirmacion, $verifiedValue);
 
+                if ($stmt->execute()) {
                     // Commit changes atomically
                     $conexion->commit();
                     $stmt->close();
                     $isSuccess = true;
-                    $mensaje = "Account created successfully. Please verify your email to activate it.";
+                    $registeredStudentId = $id;
+                    $mensaje = "Student account created successfully. It is awaiting administrator verification.";
                 } else {
                     $conexion->rollback();
                     $stmt->close();
-                    $mensaje = "Could not register user account.";
-                    $tokenConfirmacion = "";
+                    $mensaje = "Could not register student account.";
                 }
             } catch (mysqli_sql_exception $e) {
                 $conexion->rollback();
-                $tokenConfirmacion = "";
                 if ($e->getCode() === 1062) {
-                    $mensaje = "User ID or institutional email is already registered.";
+                    $mensaje = "Student ID or institutional email is already registered.";
                 } else {
-                    $mensaje = "Could not register user: " . $e->getMessage();
+                    error_log('Student registration failed: ' . $e->getMessage());
+                    $mensaje = "Could not register user. Please try again.";
                 }
             }
         }
@@ -97,68 +65,63 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Create an Account · Edu-System</title>
+    <title>Student Registration · Edu-System</title>
     <link rel="stylesheet" href="signup.css">
 </head>
 <body>
 
     <?php include_once __DIR__ . '/../../../ui/header/header.php'; ?>
-    
+
     <main class="registro-main">
         <div class="registro-main-container">
             <div class="registro-columna-izquierda">
-                <h1 class="registro-title">Create an Account</h1>
-                <form class="registro-form" method="POST">
-                    <label>Student / Control ID:</label>
-                    <input type="number" name="id" placeholder="Control ID number" required>
+                <h1 class="registro-title">Student Registration</h1>
 
-                    <label>First Name:</label>
-                    <input type="text" name="nombre" placeholder="First name" required>
-
-                    <label>Last Name:</label>
-                    <input type="text" name="lastname" placeholder="Last name" required>
-
-                    <label>Institutional Email:</label>
-                    <input type="email" name="email" placeholder="Email address" required>
-
-                    <label>Academic Role:</label>
-                    <select name="role" id="roleSelector" onchange="toggleDepartmentSelect()" required>
-                        <option value="">Select a role</option>
-                        <option value="4">Student</option>
-                        <option value="3">Teacher / Faculty</option>
-                        <option value="2">Director</option>
-                    </select>
-
-                    <div id="departmentGroup" style="display:none; flex-direction:column; gap:4px; margin-top:4px;">
-                        <label>Appointed Academic Department:</label>
-                        <select name="department_id" id="departmentId">
-                            <?php foreach ($departmentsList as $d): ?>
-                                <option value="<?php echo (int)$d['id']; ?>">
-                                    <?php echo htmlspecialchars($d['department']); ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-
-                    <label>Password:</label>
-                    <input type="password" name="password" placeholder="Create password" required>
-
-                    <button class="registro-button" type="submit">Register</button>
-                </form>
-
-                <?php if (!empty($mensaje)): ?>
-                    <p class="registro-message" style="<?php echo $isSuccess ? 'color:#15803d; background:#f0fdf4; border:1px solid #86efac;' : ''; ?>">
-                        <?php echo htmlspecialchars($mensaje); ?>
-                    </p>
-                <?php endif; ?>
-
-                <?php if (!empty($tokenConfirmacion)): ?>
-                    <p class="registro-message">
-                        To activate your account:
-                        <a class="registro-link" href="../../controllers/verificar/verificar.php?token=<?php echo urlencode($tokenConfirmacion); ?>">
-                            Confirm Email Address
+                <?php if ($isSuccess): ?>
+                    <div style="width:100%; padding:24px; background:#fffbeb; border:1px solid #fde68a; border-radius:12px; margin-bottom:20px; text-align:center;">
+                        <div style="width:48px; height:48px; margin:0 auto 12px; background:#fef3c7; color:#d97706; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:22px;">⏳</div>
+                        <h2 style="font-size:20px; font-weight:700; color:#92400e; margin-bottom:8px;">
+                            Registration Submitted!
+                        </h2>
+                        <span style="display:inline-block; font-size:12px; font-weight:600; color:#b45309; background:#fef3c7; padding:4px 10px; border-radius:20px; margin-bottom:12px;">
+                            Pending Administrator Approval
+                        </span>
+                        <p style="color:#78350f; font-size:13.5px; line-height:1.6; margin-bottom:18px;">
+                            Your student account (Control ID #<?php echo (int)$registeredStudentId; ?>) has been created successfully. An institutional administrator must review and accept your verification before you can sign in.
+                        </p>
+                        <a href="../../../index.php" class="registro-button" style="display:inline-block; text-decoration:none; width:auto; padding:12px 28px;">
+                            Return to Sign In
                         </a>
-                    </p>
+                    </div>
+                <?php else: ?>
+                    <form class="registro-form" method="POST">
+                        <label>Student Control ID Number:</label>
+                        <input type="number" name="id" placeholder="Student ID number" required>
+
+                        <label>First Name:</label>
+                        <input type="text" name="nombre" placeholder="First name" required>
+
+                        <label>Last Name:</label>
+                        <input type="text" name="lastname" placeholder="Last name" required>
+
+                        <label>Institutional Email:</label>
+                        <input type="email" name="email" placeholder="Email address" required>
+
+                        <label>Password:</label>
+                        <input type="password" name="password" placeholder="Create password" required>
+
+                        <div style="padding:10px 14px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; margin-bottom:16px; font-size:12px; color:#64748b; line-height:1.5;">
+                            ℹ️ <em>New student accounts require review and activation by an administrator before logging in.</em>
+                        </div>
+
+                        <button class="registro-button" type="submit">Register as Student</button>
+                    </form>
+
+                    <?php if (!empty($mensaje)): ?>
+                        <p class="registro-message" style="color:#b91c1c; background:#fef2f2; border:1px solid #fecaca; padding:10px 14px; border-radius:8px; width:100%; text-align:center; margin-top:14px;">
+                            <?php echo htmlspecialchars($mensaje); ?>
+                        </p>
+                    <?php endif; ?>
                 <?php endif; ?>
 
                 <a class="registro-link" href="../../../index.php">Already have an account? Sign In</a>
@@ -167,15 +130,5 @@
             <div class="registro-columna-derecha"></div>
         </div>
     </main>
-
-    <script>
-        function toggleDepartmentSelect() {
-            const roleSelect = document.getElementById('roleSelector');
-            const deptGroup = document.getElementById('departmentGroup');
-            if (roleSelect && deptGroup) {
-                deptGroup.style.display = (roleSelect.value === '2') ? 'flex' : 'none';
-            }
-        }
-    </script>
 </body>
 </html>

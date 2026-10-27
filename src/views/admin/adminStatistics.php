@@ -1,7 +1,7 @@
 <?php
     require_once __DIR__ . '/../../controllers/auth/check_auth.php';
+    requireRole([1]);
     require_once __DIR__ . '/../../models/adminModels/adminStatisticsModel.php';
-    $user = getLoggedUser();
 
     $adminStats = new AdminStatistics();
     $totalEnrollments = $adminStats->getTotalEnrollments();
@@ -17,7 +17,7 @@
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Statistics · Edu-System</title>
-        <link rel="stylesheet" href="statistics.css">
+        <link rel="stylesheet" href="adminStatistics.css">
     </head>
     <body>
         <?php include __DIR__ . '/../../../ui/header/header.php'; ?>
@@ -136,7 +136,7 @@
                                 </thead>
                                 <tbody>
                                     <?php if (!empty($coursePerformance)): ?>
-                                        <?php foreach ($coursePerformance as $item): 
+                                        <?php foreach ($coursePerformance as $item):
                                             $prog = (float)($item['progress'] ?? 0);
                                             $isPublished = ((int)$item['status'] === 1);
                                         ?>

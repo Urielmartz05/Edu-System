@@ -1,14 +1,31 @@
 <?php
     require_once __DIR__ . "/../../controllers/auth/check_auth.php";
+    requireRole([4]);
     require_once __DIR__ . "/../../models/studentModels/studentEnrollmentModel.php";
     $user = getLoggedUser();
 
     $enrollmentModel = new StudentEnrollment();
     $availableCourses = $enrollmentModel->getAvailableCourses($user['id']);
 
-    $totalAvailable = count($availableCourses);
     $departments = array_unique(array_filter(array_column($availableCourses, 'department')));
 
+    // Pure PHP filter
+    $search = trim($_GET['search'] ?? '');
+    $selectedDept = trim($_GET['dept'] ?? '');
+
+    if (!empty($search)) {
+        $availableCourses = array_filter($availableCourses, function($c) use ($search) {
+            return stripos($c['course_name'] ?? '', $search) !== false;
+        });
+    }
+
+    if (!empty($selectedDept)) {
+        $availableCourses = array_filter($availableCourses, function($c) use ($selectedDept) {
+            return ($c['department'] ?? '') === $selectedDept;
+        });
+    }
+
+    $totalAvailable = count($availableCourses);
     $error = $_GET['error'] ?? null;
 ?>
 <!DOCTYPE html>
@@ -21,8 +38,9 @@
 </head>
 <body>
     <?php include __DIR__ . '/../../../ui/header/header.php'; ?>
+    <?php include __DIR__ . '/../../../components/studentSidebar/studentSidebar.php'; ?>
 
-    <div class="standalone-container">
+    <div class="workspace">
         <main>
             <div id="page-content">
 
@@ -33,36 +51,36 @@
                     </div>
                 <?php endif; ?>
 
-                <!-- Heading -->
+                <!-- Page Heading Hero (Strictly Free of Buttons) -->
                 <section class="page-heading">
                     <div class="heading-content">
                         <span class="eyebrow">ACADEMIC OFFERINGS</span>
                         <h1>Available Course Catalog</h1>
                         <p class="subtitle">Explore institutional programs and enroll immediately to unlock learning modules, syllabi, and study resources.</p>
                     </div>
-                    <div class="heading-actions">
-                        <a href="misCursos.php" class="btn-secondary">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
-                            <span>Back to My Courses</span>
-                        </a>
-                    </div>
                 </section>
 
-                <!-- Search and Filters Bar -->
-                <section class="filters-bar">
+                <!-- Search and Filters Bar (Pure PHP GET Form) -->
+                <form method="GET" action="cursosDisponibles.php" class="filters-bar">
                     <div class="search-box">
                         <svg class="search-icon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                        <input type="search" id="searchInput" placeholder="Search by course title..." onkeyup="filterCourses()">
+                        <input type="search" name="search" id="searchInput" placeholder="Search by course title..." value="<?php echo htmlspecialchars($search); ?>">
                     </div>
                     <div class="dept-filter">
-                        <select id="deptSelect" onchange="filterCourses()">
+                        <select name="dept" id="deptSelect">
                             <option value="">All Departments</option>
                             <?php foreach ($departments as $dept): ?>
-                                <option value="<?php echo htmlspecialchars($dept); ?>"><?php echo htmlspecialchars($dept); ?></option>
+                                <option value="<?php echo htmlspecialchars($dept); ?>" <?php echo ($selectedDept === $dept) ? 'selected' : ''; ?>>
+                                    <?php echo htmlspecialchars($dept); ?>
+                                </option>
                             <?php endforeach; ?>
                         </select>
                     </div>
-                </section>
+                    <button type="submit" class="btn-secondary" style="padding: 10px 16px;">Filter</button>
+                    <?php if (!empty($search) || !empty($selectedDept)): ?>
+                        <a href="cursosDisponibles.php" class="btn-secondary" style="padding: 10px 16px; text-decoration:none;">Reset</a>
+                    <?php endif; ?>
+                </form>
 
                 <!-- Available Courses Grid -->
                 <section class="catalog-section">
@@ -97,7 +115,7 @@
                                     </div>
 
                                     <div class="card-actions">
-                                        <form action="../../controllers/alumno/enrollCourse.php" method="POST" class="enroll-form">
+                                        <form action="../../controllers/alumno/enrollCourse.php" method="POST" class="enroll-form"><?php echo csrfField(); ?>
                                             <input type="hidden" name="course_id" value="<?php echo $course['id']; ?>">
                                             <button type="submit" class="btn-enroll">
                                                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -127,31 +145,5 @@
         </main>
     </div>
 
-    <script>
-        function filterCourses() {
-            const searchVal = document.getElementById('searchInput').value.toLowerCase().trim();
-            const deptVal = document.getElementById('deptSelect').value;
-            const cards = document.querySelectorAll('.courses-grid .course-card');
-            let visibleCount = 0;
-
-            cards.forEach(card => {
-                const title = card.getAttribute('data-title') || '';
-                const dept = card.getAttribute('data-dept') || '';
-
-                const matchesSearch = title.includes(searchVal);
-                const matchesDept = !deptVal || dept === deptVal;
-
-                if (matchesSearch && matchesDept) {
-                    card.style.display = 'flex';
-                    visibleCount++;
-                } else {
-                    card.style.display = 'none';
-                }
-            });
-
-            const countEl = document.getElementById('courseCount');
-            if (countEl) countEl.textContent = visibleCount;
-        }
-    </script>
 </body>
 </html>
