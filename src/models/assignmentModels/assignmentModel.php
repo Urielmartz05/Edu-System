@@ -195,25 +195,28 @@
             $connection = $this->connection;
 
             $assignment = null;
-            if ($assignmentId > 0) {
-                $check = $connection->prepare("SELECT id, teacher_id, max_score FROM assignments WHERE id = ?");
-                $check->bind_param("i", $assignmentId);
-                $check->execute();
-                $assignment = $check->get_result()->fetch_assoc();
-                $check->close();
-            } else if ($submissionId > 0) {
-                $sql = "SELECT a.id, a.teacher_id, a.max_score
-                        FROM assignment_submissions sub
-                        INNER JOIN assignments a ON a.id = sub.assignment_id
-                        WHERE sub.id = ?";
-                $check = $connection->prepare($sql);
+            if ($submissionId > 0) {
+                // Authorize the actual submission, not a separately supplied assignment.
+                $check = $connection->prepare("SELECT a.id, a.teacher_id, a.max_score, a.course_id, sub.student_id
+                    FROM assignment_submissions sub
+                    INNER JOIN assignments a ON a.id = sub.assignment_id WHERE sub.id = ?");
                 $check->bind_param("i", $submissionId);
                 $check->execute();
                 $assignment = $check->get_result()->fetch_assoc();
                 $check->close();
-                if ($assignment) {
-                    $assignmentId = (int)$assignment['id'];
+                if (!$assignment
+                    || ($assignmentId > 0 && $assignmentId !== (int)$assignment['id'])
+                    || ($studentId > 0 && $studentId !== (int)$assignment['student_id'])) {
+                    return false;
                 }
+                $assignmentId = (int)$assignment['id'];
+                $studentId = (int)$assignment['student_id'];
+            } elseif ($assignmentId > 0 && $studentId > 0) {
+                $check = $connection->prepare("SELECT id, teacher_id, max_score, course_id FROM assignments WHERE id = ?");
+                $check->bind_param("i", $assignmentId);
+                $check->execute();
+                $assignment = $check->get_result()->fetch_assoc();
+                $check->close();
             } else {
                 return false;
             }
@@ -223,12 +226,21 @@
                 return false;
             }
 
+            $enrollment = $connection->prepare('SELECT 1 FROM student WHERE id = ? AND course_id = ? LIMIT 1');
+            $enrollment->bind_param('ii', $studentId, $assignment['course_id']);
+            $enrollment->execute();
+            $enrolled = $enrollment->get_result()->num_rows > 0;
+            $enrollment->close();
+            if (!$enrolled) {
+                return false;
+            }
+
             if ($submissionId > 0) {
                 $sql = "UPDATE assignment_submissions
                         SET score = ?, feedback = ?, graded_at = NOW(), status = 'graded'
-                        WHERE id = ?";
+                        WHERE id = ? AND assignment_id = ? AND student_id = ?";
                 $stmt = $connection->prepare($sql);
-                $stmt->bind_param("dsi", $score, $feedback, $submissionId);
+                $stmt->bind_param("dsiii", $score, $feedback, $submissionId, $assignmentId, $studentId);
                 $updated = $stmt->execute();
                 $stmt->close();
                 return $updated;
@@ -236,14 +248,16 @@
 
             if ($studentId > 0 && $assignmentId > 0) {
                 $sql = "INSERT INTO assignment_submissions (assignment_id, student_id, score, feedback, graded_at, status)
-                        VALUES (?, ?, ?, ?, NOW(), 'graded')
+                        SELECT a.id, s.id, ?, ?, NOW(), 'graded'
+                        FROM assignments a INNER JOIN student s ON s.course_id = a.course_id
+                        WHERE a.id = ? AND s.id = ?
                         ON DUPLICATE KEY UPDATE
                             score = VALUES(score),
                             feedback = VALUES(feedback),
                             graded_at = NOW(),
                             status = 'graded'";
                 $stmt = $connection->prepare($sql);
-                $stmt->bind_param("iids", $assignmentId, $studentId, $score, $feedback);
+                $stmt->bind_param("dsii", $score, $feedback, $assignmentId, $studentId);
                 $updated = $stmt->execute();
                 $stmt->close();
                 return $updated;
@@ -254,32 +268,55 @@
 
         // Delete an assignment if the requesting teacher is the owner
         public function deleteAssignment($assignmentId, $teacherId) {
-
             $assignmentId = (int)$assignmentId;
             $teacherId = $teacherId === null ? null : (int)$teacherId;
             $connection = $this->connection;
-
-            $details = $this->getAssignmentDetails($assignmentId);
-            if (!$details || ($teacherId !== null && (int)$details['teacher_id'] !== $teacherId)) {
+            $paths = [];
+            $connection->begin_transaction();
+            try {
+                $lock = $connection->prepare('SELECT teacher_id, file_path FROM assignments WHERE id = ? FOR UPDATE');
+                $lock->bind_param('i', $assignmentId);
+                $lock->execute();
+                $details = $lock->get_result()->fetch_assoc();
+                $lock->close();
+                if (!$details || ($teacherId !== null && (int)$details['teacher_id'] !== $teacherId)) {
+                    $connection->rollback();
+                    return false;
+                }
+                if (!empty($details['file_path'])) { $paths[] = $details['file_path']; }
+                $files = $connection->prepare('SELECT file_path FROM assignment_submissions WHERE assignment_id = ?');
+                $files->bind_param('i', $assignmentId);
+                $files->execute();
+                $result = $files->get_result();
+                while ($row = $result->fetch_assoc()) {
+                    if (!empty($row['file_path'])) { $paths[] = $row['file_path']; }
+                }
+                $files->close();
+                $submissions = $connection->prepare('DELETE FROM assignment_submissions WHERE assignment_id = ?');
+                $submissions->bind_param('i', $assignmentId);
+                if (!$submissions->execute()) { throw new RuntimeException('Cannot delete submissions.'); }
+                $submissions->close();
+                $stmt = $connection->prepare('DELETE FROM assignments WHERE id = ?');
+                $stmt->bind_param('i', $assignmentId);
+                if (!$stmt->execute() || $stmt->affected_rows !== 1) { throw new RuntimeException('Cannot delete assignment.'); }
+                $stmt->close();
+                if (!$connection->commit()) { throw new RuntimeException('Cannot commit assignment deletion.'); }
+            } catch (Throwable $e) {
+                $connection->rollback();
+                error_log('Assignment deletion failed: ' . $e->getMessage());
                 return false;
             }
-
-            $sql = "DELETE FROM assignments WHERE id = ? AND (? IS NULL OR teacher_id = ?)";
-
-            $stmt = $connection->prepare($sql);
-            $stmt->bind_param("iii", $assignmentId, $teacherId, $teacherId);
-            $deleted = $stmt->execute();
-            $affected = $stmt->affected_rows;
-            $stmt->close();
-
-            if ($deleted && $affected > 0 && !empty($details['file_path'])) {
-                $resourceRoot = realpath(__DIR__ . '/../../../resources/assignments');
-                $fullPath = realpath(__DIR__ . '/../../../' . $details['file_path']);
-                if ($resourceRoot && $fullPath && str_starts_with($fullPath, $resourceRoot . DIRECTORY_SEPARATOR) && is_file($fullPath)) {
-                    unlink($fullPath);
+            foreach (array_unique($paths) as $path) {
+                $fullPath = realpath(__DIR__ . '/../../../' . $path);
+                foreach (['assignments', 'submissions'] as $folder) {
+                    $root = realpath(__DIR__ . '/../../../resources/' . $folder);
+                    if ($root && $fullPath && str_starts_with($fullPath, $root . DIRECTORY_SEPARATOR) && is_file($fullPath)) {
+                        if (!@unlink($fullPath)) { error_log('Could not clean up deleted assignment resource: ' . $path); }
+                        break;
+                    }
                 }
             }
-            return $deleted && ($affected > 0);
+            return true;
         }
 
         // Retrieve assignments visible to a student with submission status

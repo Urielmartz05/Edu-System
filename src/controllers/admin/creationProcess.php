@@ -96,6 +96,12 @@
             break;
 
         case 'admin':
+            // Limited administrator scopes are not implemented; never silently grant full access.
+            if (($_POST['scope'] ?? 'super') !== 'super') {
+                $_SESSION['flash_error'] = 'Only full administrator access is supported. No account was created.';
+                header('Location: ../../views/admin/adminCreate.php?tab=admin&status=error');
+                exit;
+            }
             $name = trim($_POST['name'] ?? '');
             $lastname = trim($_POST['lastname'] ?? '');
             $email = trim($_POST['email'] ?? '');

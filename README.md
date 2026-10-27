@@ -1,5 +1,7 @@
 # Edu-System
 
-Email verification requires `APP_BASE_URL` (the application's public base URL, for example `https://campus.example.com`) and `MAIL_FROM` (a valid sender address) in the PHP server environment. Configure PHP's `mail()` transport through `php.ini` or the server mail service. Registration never exposes activation links in the browser. If delivery fails, the account remains unverified and an administrator can activate it from user management.
+Public student registration creates a pending account. An administrator must approve it from user management before the student can sign in. Registration does not send an activation email or expose activation tokens.
 
-Run the isolated regression checks with `php tests/regressionFixesTest.php`. They use simulated database connections and temporary files; they do not connect to the application database or send email.
+The optional verification-email helper requires `APP_BASE_URL` (the application's trusted public base URL) and `MAIL_FROM` in the PHP server environment, plus a working PHP `mail()` transport. It never derives activation links from the request's Host header. External email delivery depends on the deployed server's mail configuration.
+
+Administrator accounts currently have full management access; limited administrator scopes and stored course descriptions are not offered by the creation form.

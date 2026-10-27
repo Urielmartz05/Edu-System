@@ -361,16 +361,27 @@
         }
 
         // Update assigned instructor for a syllabus module block.
-        public function updateBlockTeacher($blockId, $teacherId) {
+        public function getBlockManagementDetails($blockId) {
+            $stmt = $this->connection->prepare('SELECT b.id, b.course_id, c.department_id FROM blocks b INNER JOIN course c ON c.id = b.course_id WHERE b.id = ?');
+            $stmt->bind_param('i', $blockId);
+            $stmt->execute();
+            $block = $stmt->get_result()->fetch_assoc();
+            $stmt->close();
+            return $block ?: null;
+        }
+
+        public function updateBlockTeacher($blockId, $teacherId, $courseId) {
             $blockId = (int)$blockId;
             $teacherId = (int)$teacherId;
-            if ($blockId <= 0 || $teacherId <= 0) {
+            $courseId = (int)$courseId;
+            if ($blockId <= 0 || $teacherId <= 0 || $courseId <= 0) {
                 return false;
             }
 
             $connection = $this->connection;
-            $stmt = $connection->prepare("UPDATE blocks SET teacher_id = ? WHERE id = ?");
-            $stmt->bind_param("ii", $teacherId, $blockId);
+            $stmt = $connection->prepare("UPDATE blocks b INNER JOIN users u ON u.id = ? AND u.role = 3
+                SET b.teacher_id = u.id WHERE b.id = ? AND b.course_id = ?");
+            $stmt->bind_param("iii", $teacherId, $blockId, $courseId);
             $success = $stmt->execute();
             $stmt->close();
 
@@ -689,32 +700,37 @@
                 }
             }
 
-            // Cascade delete scenario
+            // Own one transaction for the whole section and every course.
             if ($cascadeDeleteCourses) {
+                $pathsToDelete = [];
                 $connection->begin_transaction();
                 try {
+                    $courses = $connection->prepare('SELECT id FROM course WHERE department_id = ? ORDER BY id FOR UPDATE');
+                    $courses->bind_param('i', $departmentId);
+                    if (!$courses->execute()) { throw new RuntimeException('Cannot lock section courses.'); }
+                    $result = $courses->get_result();
+                    $courseIds = [];
+                    while ($row = $result->fetch_assoc()) { $courseIds[] = (int)$row['id']; }
+                    $courses->close();
                     foreach ($courseIds as $cId) {
-                        $this->deleteCourse($cId);
+                        $this->deleteCourseRecords($cId, $pathsToDelete);
                     }
-
-                    // Remove director link from this department
-                    $delDir = $connection->prepare("DELETE FROM director WHERE department_id = ?");
-                    $delDir->bind_param("i", $departmentId);
-                    $delDir->execute();
+                    $delDir = $connection->prepare('DELETE FROM director WHERE department_id = ?');
+                    $delDir->bind_param('i', $departmentId);
+                    if (!$delDir->execute()) { throw new RuntimeException('Cannot remove director assignment.'); }
                     $delDir->close();
-
-                    // Delete department
-                    $delDept = $connection->prepare("DELETE FROM departments WHERE id = ?");
-                    $delDept->bind_param("i", $departmentId);
-                    $delDept->execute();
+                    $delDept = $connection->prepare('DELETE FROM departments WHERE id = ?');
+                    $delDept->bind_param('i', $departmentId);
+                    if (!$delDept->execute()) { throw new RuntimeException('Cannot delete section.'); }
                     $delDept->close();
-
-                    $connection->commit();
-                    return ['success' => true, 'message' => "Section and {$courseCount} associated course(s) deleted."];
-                } catch (\Throwable $e) {
+                    if (!$connection->commit()) { throw new RuntimeException('Section deletion commit failed.'); }
+                } catch (Throwable $e) {
                     $connection->rollback();
-                    return ['success' => false, 'error' => 'Database error during cascade delete: ' . $e->getMessage()];
+                    error_log('Section deletion failed: ' . $e->getMessage());
+                    return ['success' => false, 'error' => 'Could not delete the section. No changes were saved.'];
                 }
+                $this->removeCommittedFiles($pathsToDelete);
+                return ['success' => true, 'message' => 'Section and ' . count($courseIds) . ' associated course(s) deleted.'];
             }
 
             // Standard delete (if unassigned or 0 courses)
@@ -777,84 +793,89 @@
 
         // Delete course and perform cascading cleanup of files, blocks, and enrollments.
         public function deleteCourse($courseId) {
-
-            $connection = $this->connection;
             $courseId = (int)$courseId;
-
-            if ($courseId <= 0) {
-                return false;
-            }
-
-            $connection->begin_transaction();
+            if ($courseId <= 0) { return false; }
+            $connection = $this->connection;
             $pathsToDelete = [];
-
+            $connection->begin_transaction();
             try {
-                // 1. Fetch block IDs belonging to course
-                $blockStmt = $connection->prepare("SELECT id FROM blocks WHERE course_id = ?");
-                $blockStmt->bind_param("i", $courseId);
-                $blockStmt->execute();
-                $bRes = $blockStmt->get_result();
-                $blockIds = [];
-
-                while ($bRow = $bRes->fetch_assoc()) {
-                    $blockIds[] = (int)$bRow['id'];
-                }
-                $blockStmt->close();
-
-                // 2. Collect paths; physical deletion must wait until commit.
-                if (!empty($blockIds)) {
-                    $inPlaceholders = implode(',', array_fill(0, count($blockIds), '?'));
-                    $types = str_repeat('i', count($blockIds));
-                    
-                    $fileQuery = "SELECT id, file_path FROM files WHERE subject_id IN ($inPlaceholders)";
-                    $fileStmt = $connection->prepare($fileQuery);
-                    $fileStmt->bind_param($types, ...$blockIds);
-                    $fileStmt->execute();
-                    $fRes = $fileStmt->get_result();
-
-                    while ($f = $fRes->fetch_assoc()) {
-                        $pathsToDelete[] = $f['file_path'];
-                    }
-                    $fileStmt->close();
-
-                    // Delete file records
-                    $delFilesStmt = $connection->prepare("DELETE FROM files WHERE subject_id IN ($inPlaceholders)");
-                    $delFilesStmt->bind_param($types, ...$blockIds);
-                    $delFilesStmt->execute();
-                    $delFilesStmt->close();
-
-                    // Delete student block progress records
-                    $delProgStmt = $connection->prepare("DELETE FROM student_block_progress WHERE block_id IN ($inPlaceholders)");
-                    $delProgStmt->bind_param($types, ...$blockIds);
-                    $delProgStmt->execute();
-                    $delProgStmt->close();
-                }
-
-                // 3. Delete student enrollments in this course
-                $delEnrollStmt = $connection->prepare("DELETE FROM student WHERE course_id = ?");
-                $delEnrollStmt->bind_param("i", $courseId);
-                $delEnrollStmt->execute();
-                $delEnrollStmt->close();
-
-                // 4. Delete syllabus module blocks
-                $delBlocksStmt = $connection->prepare("DELETE FROM blocks WHERE course_id = ?");
-                $delBlocksStmt->bind_param("i", $courseId);
-                $delBlocksStmt->execute();
-                $delBlocksStmt->close();
-
-                // 5. Delete course record
-                $delCourseStmt = $connection->prepare("DELETE FROM course WHERE id = ?");
-                $delCourseStmt->bind_param("i", $courseId);
-                $delCourseStmt->execute();
-                $delCourseStmt->close();
-
-                $connection->commit();
+                $this->deleteCourseRecords($courseId, $pathsToDelete);
+                if (!$connection->commit()) { throw new RuntimeException('Course deletion commit failed.'); }
             } catch (Throwable $e) {
                 $connection->rollback();
                 return false;
             }
             $this->removeCommittedFiles($pathsToDelete);
             return true;
+        }
+
+        // Uses the caller's transaction. Never commits or removes files itself.
+        private function deleteCourseRecords($courseId, array &$pathsToDelete) {
+            $connection = $this->connection;
+            $this->deleteCourseworkRecords('course_id', $courseId, $pathsToDelete);
+            $links = $connection->prepare('DELETE bl FROM block_links bl INNER JOIN blocks b ON b.id = bl.block_id WHERE b.course_id = ?');
+            $links->bind_param('i', $courseId);
+            if (!$links->execute()) { throw new RuntimeException('Cannot delete course links.'); }
+            $links->close();
+            // 1. Fetch block IDs belonging to course
+            $blockStmt = $connection->prepare("SELECT id FROM blocks WHERE course_id = ?");
+            $blockStmt->bind_param("i", $courseId);
+            if (!$blockStmt->execute()) { throw new RuntimeException('Course deletion query failed.'); }
+            $bRes = $blockStmt->get_result();
+            $blockIds = [];
+
+            while ($bRow = $bRes->fetch_assoc()) {
+                $blockIds[] = (int)$bRow['id'];
+            }
+            $blockStmt->close();
+
+            // 2. Collect paths; physical deletion must wait until commit.
+            if (!empty($blockIds)) {
+                $inPlaceholders = implode(',', array_fill(0, count($blockIds), '?'));
+                $types = str_repeat('i', count($blockIds));
+
+                $fileQuery = "SELECT id, file_path FROM files WHERE subject_id IN ($inPlaceholders)";
+                $fileStmt = $connection->prepare($fileQuery);
+                $fileStmt->bind_param($types, ...$blockIds);
+                if (!$fileStmt->execute()) { throw new RuntimeException('Course deletion query failed.'); }
+                $fRes = $fileStmt->get_result();
+
+                while ($f = $fRes->fetch_assoc()) {
+                    $pathsToDelete[] = $f['file_path'];
+                }
+                $fileStmt->close();
+
+                // Delete file records
+                $delFilesStmt = $connection->prepare("DELETE FROM files WHERE subject_id IN ($inPlaceholders)");
+                $delFilesStmt->bind_param($types, ...$blockIds);
+                if (!$delFilesStmt->execute()) { throw new RuntimeException('Course deletion query failed.'); }
+                $delFilesStmt->close();
+
+                // Delete student block progress records
+                $delProgStmt = $connection->prepare("DELETE FROM student_block_progress WHERE block_id IN ($inPlaceholders)");
+                $delProgStmt->bind_param($types, ...$blockIds);
+                if (!$delProgStmt->execute()) { throw new RuntimeException('Course deletion query failed.'); }
+                $delProgStmt->close();
+            }
+
+            // 3. Delete student enrollments in this course
+            $delEnrollStmt = $connection->prepare("DELETE FROM student WHERE course_id = ?");
+            $delEnrollStmt->bind_param("i", $courseId);
+            if (!$delEnrollStmt->execute()) { throw new RuntimeException('Course deletion query failed.'); }
+            $delEnrollStmt->close();
+
+            // 4. Delete syllabus module blocks
+            $delBlocksStmt = $connection->prepare("DELETE FROM blocks WHERE course_id = ?");
+            $delBlocksStmt->bind_param("i", $courseId);
+            if (!$delBlocksStmt->execute()) { throw new RuntimeException('Course deletion query failed.'); }
+            $delBlocksStmt->close();
+
+            // 5. Delete course record
+            $delCourseStmt = $connection->prepare("DELETE FROM course WHERE id = ?");
+            $delCourseStmt->bind_param("i", $courseId);
+            if (!$delCourseStmt->execute()) { throw new RuntimeException('Course deletion query failed.'); }
+            $delCourseStmt->close();
+
         }
 
         // Delete a specific syllabus block and attached learning resources.
@@ -871,6 +892,11 @@
             $pathsToDelete = [];
 
             try {
+                $this->deleteCourseworkRecords('block_id', $blockId, $pathsToDelete);
+                $links = $connection->prepare('DELETE FROM block_links WHERE block_id = ?');
+                $links->bind_param('i', $blockId);
+                if (!$links->execute()) { throw new RuntimeException('Cannot delete module links.'); }
+                $links->close();
                 // Collect paths without changing the filesystem before commit.
                 $fileStmt = $connection->prepare("SELECT id, file_path FROM files WHERE subject_id = ?");
                 $fileStmt->bind_param("i", $blockId);
@@ -905,6 +931,32 @@
             }
             $this->removeCommittedFiles($pathsToDelete);
             return true;
+        }
+
+        private function deleteCourseworkRecords($column, $id, array &$paths) {
+            if (!in_array($column, ['course_id', 'block_id'], true)) {
+                throw new InvalidArgumentException('Invalid coursework deletion scope.');
+            }
+            $connection = $this->connection;
+            $files = $connection->prepare("SELECT file_path FROM assignments WHERE {$column} = ?
+                UNION ALL SELECT sub.file_path FROM assignment_submissions sub
+                INNER JOIN assignments a ON a.id = sub.assignment_id WHERE a.{$column} = ?");
+            $files->bind_param('ii', $id, $id);
+            if (!$files->execute()) { throw new RuntimeException('Cannot collect coursework files.'); }
+            $result = $files->get_result();
+            while ($row = $result->fetch_assoc()) {
+                if (!empty($row['file_path'])) { $paths[] = $row['file_path']; }
+            }
+            $files->close();
+            $submissions = $connection->prepare("DELETE sub FROM assignment_submissions sub
+                INNER JOIN assignments a ON a.id = sub.assignment_id WHERE a.{$column} = ?");
+            $submissions->bind_param('i', $id);
+            if (!$submissions->execute()) { throw new RuntimeException('Cannot delete coursework submissions.'); }
+            $submissions->close();
+            $assignments = $connection->prepare("DELETE FROM assignments WHERE {$column} = ?");
+            $assignments->bind_param('i', $id);
+            if (!$assignments->execute()) { throw new RuntimeException('Cannot delete coursework assignments.'); }
+            $assignments->close();
         }
 
         private function removeCommittedFiles(array $paths) {

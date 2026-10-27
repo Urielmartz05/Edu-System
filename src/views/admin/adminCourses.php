@@ -90,7 +90,12 @@
                             </div>
                             <div style="display:flex; gap:10px;">
                                 <a href="adminCourses.php" class="btn btn-secondary" style="padding:6px 14px; text-decoration:none;">Cancel</a>
-                                <form method="POST" action="../../controllers/admin/manageCourseActions.php?action=delete_course&course_id=<?php echo (int)$courseToDelete['id']; ?>" style="display:inline;"><?php echo csrfField(); ?><button type="submit"  class="btn btn-primary" style="background:#dc2626; border-color:#dc2626; padding:6px 14px; text-decoration:none;">Confirm Delete</button></form>
+                                <form method="POST" action="../../controllers/admin/manageCourseActions.php" style="display:inline;">
+                                    <?php echo csrfField(); ?>
+                                    <input type="hidden" name="action" value="delete_course">
+                                    <input type="hidden" name="course_id" value="<?php echo (int)$courseToDelete['id']; ?>">
+                                    <button type="submit" class="btn btn-primary" style="background:#dc2626; border-color:#dc2626; padding:6px 14px; text-decoration:none;">Confirm Delete</button>
+                                </form>
                             </div>
                         </div>
                     <?php endif; ?>
@@ -162,7 +167,7 @@
                             <?php endif; ?>
                         </form>
 
-                        <div class="table-wrap">
+                        <div class="table-wrap" role="region" aria-label="Course catalog" tabindex="0">
                             <table id="coursesTable">
                                 <thead>
                                     <tr>

@@ -309,11 +309,13 @@ select {
     min-width: 96px;
 }
 
-/* Table Sizing & Columns - Sin scroll horizontal */
+/* Keep all table columns reachable on narrow screens. */
 .table-wrap {
     width: 100%;
     max-width: 100%;
-    overflow-x: hidden;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    min-width: 0;
     display: block;
 }
 

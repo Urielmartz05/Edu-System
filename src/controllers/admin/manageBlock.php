@@ -23,8 +23,19 @@
     $blockId = (int)($_POST['block_id'] ?? 0);
     $returnUrl = trim($_POST['return_url'] ?? '');
 
+    // Resolve ownership from the actual module before trusting a posted course ID.
+    if ($action === 'reassign_block') {
+        $block = $coursesModel->getBlockManagementDetails($blockId);
+        if (!$block || ($courseId > 0 && $courseId !== (int)$block['course_id'])) {
+            $_SESSION['flash_error'] = 'Invalid module or course selection.';
+            header('Location: /src/views/' . ($isDirector ? 'director/directorCourses.php' : 'admin/adminCourses.php'));
+            exit;
+        }
+        $courseId = (int)$block['course_id'];
+    }
+
     // If Director, verify course belongs to their academic department
-    if ($isDirector && $courseId > 0) {
+    if ($isDirector) {
         $dept = $directorModel->getDirectorDepartment((int)$user['id']);
         $deptId = (int)($dept['department_id'] ?? 0);
         $course = $coursesModel->getCourseDetails($courseId);
@@ -53,7 +64,7 @@
             if ($blockId <= 0 || $teacherId <= 0) {
                 $_SESSION['flash_error'] = "Module and new instructor are required for reassignment.";
             } else {
-                if ($coursesModel->updateBlockTeacher($blockId, $teacherId)) {
+                if ($coursesModel->updateBlockTeacher($blockId, $teacherId, $courseId)) {
                     $_SESSION['flash_success'] = "Module instructor successfully updated.";
                 } else {
                     $_SESSION['flash_error'] = "Failed to update module instructor.";
@@ -76,19 +87,14 @@
             break;
     }
 
-    // Determine safe redirection target
-    if (!empty($returnUrl) && !preg_match('/^https?:\/\//i', $returnUrl)) {
-        header("Location: " . $returnUrl);
-        exit;
-    }
-
+    // Only return to known view paths, never to a path relative to this controller.
     if ($isDirector) {
-        if ($courseId > 0) {
-            header("Location: ../../views/director/directorCourseContent.php?course_id=" . urlencode($courseId));
+        if (basename(parse_url($returnUrl, PHP_URL_PATH) ?: '') === 'directorCourses.php' || $courseId <= 0) {
+            header('Location: /src/views/director/directorCourses.php');
         } else {
-            header("Location: ../../views/director/directorCourses.php");
+            header('Location: /src/views/director/directorCourseContent.php?course_id=' . $courseId);
         }
     } else {
-        header("Location: ../../views/admin/adminCourseContent.php?course_id=" . urlencode($courseId));
+        header('Location: /src/views/admin/' . ($courseId > 0 ? 'adminCourseContent.php?course_id=' . $courseId : 'adminCourses.php'));
     }
     exit;

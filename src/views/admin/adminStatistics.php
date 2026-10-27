@@ -123,7 +123,7 @@
                                 <p>Syllabus completion, enrolled students, and module counts per course.</p>
                             </div>
                         </div>
-                        <div class="table-wrap">
+                        <div class="table-wrap" role="region" aria-label="Course statistics" tabindex="0">
                             <table>
                                 <thead>
                                     <tr>

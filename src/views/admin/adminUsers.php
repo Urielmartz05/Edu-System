@@ -185,7 +185,7 @@
                             <?php endif; ?>
                         </form>
 
-                        <div class="table-wrap">
+                        <div class="table-wrap" role="region" aria-label="User directory" tabindex="0">
                             <table id="usersTable">
                                 <thead>
                                     <tr>

@@ -59,7 +59,9 @@
     $isValid = false;
 
     // Standard hash verification or legacy plaintext match
-    if (password_verify($currentPassword, $storedPassword) || $storedPassword === $currentPassword) {
+    $isLegacyPassword = !password_get_info($storedPassword)['algo'];
+    if (password_verify($currentPassword, $storedPassword)
+        || ($isLegacyPassword && hash_equals($storedPassword, $currentPassword))) {
         $isValid = true;
     }
 

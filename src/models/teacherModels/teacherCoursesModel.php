@@ -264,54 +264,49 @@
 
         // Delete learning resource from physical disk and database.
         public function deleteFileFromBlock($teacherId, $fileId, $userRole = 3) {
-
             $teacherId = (int)$teacherId;
             $fileId = (int)$fileId;
             $userRole = (int)$userRole;
+            if ($fileId <= 0 || !in_array($userRole, [1, 2, 3], true)) { return false; }
             $connection = $this->connection;
-
-            if ($userRole === 1) { // Admin
-                $sql = "SELECT f.id, f.file_path FROM files f WHERE f.id = ?";
-                $stmt = $connection->prepare($sql);
-                $stmt->bind_param("i", $fileId);
-            } elseif ($userRole === 2) { // Director
-                $sql = "SELECT f.id, f.file_path
-                        FROM files f
+            $connection->begin_transaction();
+            try {
+                if ($userRole === 1) {
+                    $sql = 'SELECT f.id, f.file_path FROM files f WHERE f.id = ?';
+                } elseif ($userRole === 2) {
+                    $sql = 'SELECT f.id, f.file_path FROM files f
                         INNER JOIN blocks b ON b.id = f.subject_id
                         INNER JOIN course c ON c.id = b.course_id
                         INNER JOIN director d ON d.department_id = c.department_id
-                        WHERE f.id = ? AND d.id = ?";
-                $stmt = $connection->prepare($sql);
-                $stmt->bind_param("ii", $fileId, $teacherId);
-            } else { // Teacher
-                $sql = "SELECT f.id, f.file_path
-                        FROM files f
+                        WHERE f.id = ? AND d.id = ?';
+                } else {
+                    $sql = 'SELECT f.id, f.file_path FROM files f
                         INNER JOIN blocks b ON b.id = f.subject_id
-                        WHERE f.id = ? AND b.teacher_id = ?";
-                $stmt = $connection->prepare($sql);
-                $stmt->bind_param("ii", $fileId, $teacherId);
-            }
-            $stmt->execute();
-            $result = $stmt->get_result();
-            $row = $result->fetch_assoc();
-            $stmt->close();
-
-            if ($row) {
-                $filePath = $row['file_path'];
-                $fullPath = __DIR__ . '/../../../' . $filePath;
-                if (file_exists($fullPath) && is_file($fullPath)) {
-                    @unlink($fullPath);
+                        WHERE f.id = ? AND b.teacher_id = ?';
                 }
-
-                $delStmt = $connection->prepare("DELETE FROM files WHERE id = ?");
-                $delStmt->bind_param("i", $fileId);
-                $success = $delStmt->execute();
-                $delStmt->close();
-
-                return $success;
+                $stmt = $connection->prepare($sql . ' FOR UPDATE');
+                if ($userRole === 1) { $stmt->bind_param('i', $fileId); }
+                else { $stmt->bind_param('ii', $fileId, $teacherId); }
+                $stmt->execute();
+                $row = $stmt->get_result()->fetch_assoc();
+                $stmt->close();
+                if (!$row) { $connection->rollback(); return false; }
+                $delete = $connection->prepare('DELETE FROM files WHERE id = ?');
+                $delete->bind_param('i', $fileId);
+                if (!$delete->execute() || $delete->affected_rows !== 1) { throw new RuntimeException('Cannot delete file record.'); }
+                $delete->close();
+                if (!$connection->commit()) { throw new RuntimeException('Cannot commit file deletion.'); }
+            } catch (Throwable $e) {
+                $connection->rollback();
+                error_log('Resource deletion failed: ' . $e->getMessage());
+                return false;
             }
-
-            return false;
+            $root = realpath(__DIR__ . '/../../../resources');
+            $path = realpath(__DIR__ . '/../../../' . $row['file_path']);
+            if ($root && $path && str_starts_with($path, $root . DIRECTORY_SEPARATOR) && is_file($path)) {
+                if (!@unlink($path)) { error_log('Could not clean up deleted resource: ' . $row['file_path']); }
+            }
+            return true;
         }
 
         // Add external multimedia or web reference link to a block.

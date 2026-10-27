@@ -2,12 +2,8 @@
 
 function sendVerificationEmail($email, $token, ?callable $transport = null) {
     $baseUrl = rtrim(getenv('APP_BASE_URL') ?: '', '/');
-    if (empty($baseUrl)) {
-        $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-        $host = $_SERVER['HTTP_HOST'] ?? 'localhost:8000';
-        $baseUrl = "$protocol://$host";
-    }
-    $from = getenv('MAIL_FROM') ?: 'noreply@edu-system.local';
+    // Activation links must use a configured origin, never the request's Host header.
+    $from = getenv('MAIL_FROM') ?: '';
     $urlParts = parse_url($baseUrl);
     if (!filter_var($email, FILTER_VALIDATE_EMAIL) || !preg_match('/^[a-f0-9]{32}$/', $token)
         || !filter_var($from, FILTER_VALIDATE_EMAIL) || preg_match('/[\r\n]/', $from)

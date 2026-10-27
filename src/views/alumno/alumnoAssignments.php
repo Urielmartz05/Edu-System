@@ -158,7 +158,7 @@
                                 <p>Instructor: <?php echo htmlspecialchars($selectedTask['teacher_name']); ?> | Due: <?php echo date('M d, Y · h:i A', strtotime($selectedTask['due_date'])); ?></p>
                             </div>
                             <div style="display:flex; align-items:center; gap:8px;">
-                                <a href="alumnoCourses.php?course_id=<?php echo $selectedTask['course_id']; ?>" class="btn-secondary-link" title="Jump to syllabus units">Course Syllabus &rarr;</a>
+                                <a href="../../controllers/alumno/selectCourse.php?course_id=<?php echo (int)$selectedTask['course_id']; ?>&amp;target=courses" class="btn-secondary-link" title="Jump to syllabus units">Course Syllabus &rarr;</a>
                                 <a href="alumnoAssignments.php<?php echo $statusFilter !== 'all' ? '?status=' . urlencode($statusFilter) : ''; ?>" class="btn-secondary-link">Close Details</a>
                             </div>
                         </div>

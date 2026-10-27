@@ -15,12 +15,17 @@
     $action = $_GET['action'] ?? '';
     $reviewId = isset($_GET['review_id']) ? (int)$_GET['review_id'] : null;
     $search = trim($_GET['search'] ?? '');
+    $assignmentListUrl = $userRole === 1 ? '/src/views/admin/adminAssignments.php' : 'ponenteAssignments.php';
+    if ($userRole === 1 && $reviewId <= 0) {
+        header('Location: ' . $assignmentListUrl);
+        exit;
+    }
 
     // Teacher assigned courses
-    $teacherCourses = $teacherCoursesModel->getCoursesWithDetails($teacherId);
+    $teacherCourses = $userRole === 1 ? [] : $teacherCoursesModel->getCoursesWithDetails($teacherId);
 
     // Teacher assignments
-    $assignments = $assignmentModel->getTeacherAssignments($teacherId, $courseFilter);
+    $assignments = $userRole === 1 ? [] : $assignmentModel->getTeacherAssignments($teacherId, $courseFilter);
 
     // Apply search filter if active
     if (!empty($search)) {
@@ -56,6 +61,11 @@
             $submissions = $assignmentModel->getAssignmentSubmissions($reviewId);
         }
     }
+    if ($userRole === 1 && !$reviewAssignment) {
+        $_SESSION['flash_error'] = 'The requested assignment could not be found.';
+        header('Location: ' . $assignmentListUrl);
+        exit;
+    }
 
     // If creation view is active, get blocks for selected course
     $selectedCourseBlocks = [];
@@ -76,12 +86,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Faculty Assignments & Submissions · Edu-System</title>
+    <title><?php echo $userRole === 1 ? 'Administrative Assignment Review' : 'Faculty Assignments & Submissions'; ?> · Edu-System</title>
     <link rel="stylesheet" href="ponenteAssignments.css">
 </head>
 <body>
     <?php include __DIR__ . '/../../../ui/header/header.php'; ?>
-    <?php include __DIR__ . '/../../../components/teacherSidebar/teacherSidebar.php'; ?>
+    <?php
+        if ($userRole === 1) {
+            $activeAdminPage = 'adminAssignments.php';
+            include __DIR__ . '/../../../ui/adminSideBar/adminSideBar.php';
+        } else {
+            include __DIR__ . '/../../../components/teacherSidebar/teacherSidebar.php';
+        }
+    ?>
 
     <div class="workspace">
         <main>
@@ -105,13 +122,14 @@
                 <!-- Page Heading Hero (Strictly Free of Buttons) -->
                 <section class="page-heading">
                     <div>
-                        <span class="eyebrow">FACULTY ACADEMIC MANAGEMENT · INSTRUCTOR PORTAL</span>
-                        <h1>Assignments & Evaluation Hub</h1>
-                        <p class="subtitle">Design academic coursework, assign module deliverables, inspect student submissions, and record academic evaluations.</p>
+                        <span class="eyebrow"><?php echo $userRole === 1 ? 'ACADEMIC ADMINISTRATION · ASSIGNMENT REVIEW' : 'FACULTY ACADEMIC MANAGEMENT · INSTRUCTOR PORTAL'; ?></span>
+                        <h1><?php echo $userRole === 1 ? 'Assignment Review & Evaluation' : 'Assignments & Evaluation Hub'; ?></h1>
+                        <p class="subtitle"><?php echo $userRole === 1 ? 'Inspect coursework submissions and evaluations while managing institutional assignments.' : 'Design academic coursework, assign module deliverables, inspect student submissions, and record academic evaluations.'; ?></p>
                     </div>
                 </section>
 
                 <!-- Faculty KPIs Summary Grid -->
+                <?php if ($userRole !== 1): ?>
                 <div class="metrics-grid">
                     <div class="metric-card">
                         <span class="metric-label">Active Assignments</span>
@@ -131,6 +149,7 @@
                 </div>
 
                 <!-- Assignment Creation Panel (Triggered via ?action=new) -->
+                <?php endif; ?>
                 <?php if ($action === 'new'): ?>
                     <section class="panel form-panel">
                         <div class="panel-head">
@@ -232,7 +251,7 @@
                                     </div>
                                 <?php endif; ?>
                             </div>
-                            <a href="ponenteAssignments.php" class="btn-secondary-link">Back to Assignments</a>
+                            <a href="<?php echo htmlspecialchars($assignmentListUrl); ?>" class="btn-secondary-link">Back to Assignments</a>
                         </div>
 
                         <div class="table-wrap">
@@ -317,6 +336,7 @@
                 <?php endif; ?>
 
                 <!-- Assignments Overview Panel -->
+                <?php if ($userRole !== 1): ?>
                 <section class="panel">
                     <div class="panel-head">
                         <div>
@@ -419,7 +439,7 @@
                                                     <a href="ponenteAssignments.php?review_id=<?php echo $a['id']; ?>" class="btn-review-action">
                                                         Review Submissions
                                                     </a>
-                                                    <form method="POST" action="../../controllers/teacher/manageAssignments.php?action=delete&assignment_id=<?php echo $a['id']; ?>&course_id=<?php echo $a['course_id']; ?>" style="display:inline;"><?php echo csrfField(); ?><button type="submit"  class="btn-delete-link">
+                                                    <form method="POST" action="../../controllers/teacher/manageAssignments.php?action=delete&assignment_id=<?php echo $a['id']; ?>&course_id=<?php echo $a['course_id']; ?>" style="display:inline;" onsubmit="return confirm('Delete this assignment and its grades permanently?');"><?php echo csrfField(); ?><button type="submit"  class="btn-delete-link">
                                                         Delete
                                                     </button></form>
                                                 </div>
@@ -432,6 +452,7 @@
                     </div>
                 </section>
 
+                <?php endif; ?>
             </div>
         </main>
     </div>

@@ -273,6 +273,7 @@ main {
     border-radius: 10px;
     padding: 8px 14px;
     flex: 1;
+    min-width: 0;
     max-width: 440px;
     transition: border-color 0.15s, box-shadow 0.15s;
 }
@@ -288,6 +289,8 @@ main {
     font-size: 13px;
     color: #0f172a;
     width: 100%;
+    min-width: 0;
+    flex: 1;
     background: transparent;
 }
 
@@ -591,7 +594,9 @@ details[open] .accordion-chevron {
    ==================================================== */
 .table-wrap {
     width: 100%;
-    overflow-x: hidden;
+    overflow-x: auto;
+    max-width: 100%;
+    min-width: 0;
 }
 
 table {
@@ -980,12 +985,54 @@ tbody tr:hover {
     .kpi-grid {
         grid-template-columns: 1fr;
     }
+    .workspace-tabs-bar {
+        flex-wrap: wrap;
+    }
+    .workspace-tabs-bar .tab-btn {
+        flex: 1 1 100%;
+        min-width: 0;
+        justify-content: space-between;
+    }
+    .accordion-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+        padding: 16px;
+    }
+    .accordion-title-wrap {
+        min-width: 0;
+        flex-wrap: wrap;
+    }
+    .accordion-title {
+        min-width: 0;
+        white-space: normal;
+        overflow-wrap: anywhere;
+    }
+    .accordion-header-actions {
+        max-width: 100%;
+        flex-wrap: wrap;
+    }
+    .accordion-header-actions > a {
+        flex: 1 1 auto;
+        justify-content: center;
+    }
     .panel-toolbar {
         flex-direction: column;
         align-items: stretch;
     }
     .toolbar-search-wrap {
         max-width: 100%;
+    }
+    .toolbar-course-actions {
+        width: 100%;
+        min-width: 0;
+        flex-wrap: wrap;
+    }
+    .toolbar-course-actions > a {
+        flex: 1 1 100%;
+        min-width: 0;
+        justify-content: center;
+        white-space: normal;
     }
     .toolbar-actions {
         justify-content: space-between;

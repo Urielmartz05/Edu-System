@@ -253,12 +253,7 @@
                                     </div>
                                     <input type="hidden" name="course_status" value="1">
 
-                                    <div class="form-group full-width">
-                                        <label for="course_desc">
-                                            <span class="label-title">Syllabus Overview & Course Prerequisites</span>
-                                        </label>
-                                        <textarea id="course_desc" name="description" placeholder="Provide a summary of core learning outcomes, recommended prerequisites, and grading policies..."></textarea>
-                                    </div>
+
                                 </div>
 
                                 <div class="form-actions-bar">
@@ -843,7 +838,7 @@
                                     </div>
                                     <div>
                                         <h2>System Administrator Provisioning</h2>
-                                        <p>Delegate privileged governance credentials with institutional scope controls.</p>
+                                        <p>Create administrator accounts with full access to institutional management.</p>
                                     </div>
                                 </div>
                             </div>
@@ -877,15 +872,8 @@
                                     </div>
 
                                     <div class="form-group">
-                                        <label for="admin_scope">
-                                            <span class="label-title">Administrative Role Scope <span class="label-required">*</span></span>
-                                            <span class="label-hint">Access Level</span>
-                                        </label>
-                                        <select id="admin_scope" name="scope" required>
-                                            <option value="super">Super Administrator (Full Catalog, Role & System Control)</option>
-                                            <option value="academic">Academic Dean / Coordinator (Catalog & Faculty Operations)</option>
-                                            <option value="registrar">Student Registrar (Accounts, Enrollments & Reports)</option>
-                                        </select>
+                                        <span class="label-title">Administrator Access</span>
+                                        <p class="field-caption">Administrator accounts have full access to the catalog, user accounts, enrollments, and reports.</p>
                                     </div>
                                 </div>
 
