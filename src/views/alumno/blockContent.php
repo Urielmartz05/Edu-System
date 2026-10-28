@@ -69,7 +69,7 @@
                         <button type="submit" id="btnToggleProgress" class="btn-toggle-progress <?php echo $isCompleted ? 'is-completed' : ''; ?>" title="<?php echo $isCompleted ? 'Click to mark as Incomplete' : 'Click to mark as Completed'; ?>">
                             <?php if ($isCompleted): ?>
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                                <span id="btnText">Completed ✓</span>
+                                <span id="btnText">Completed</span>
                             <?php else: ?>
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 14 14"/></svg>
                                 <span id="btnText">Mark as Completed</span>
